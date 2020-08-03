@@ -8,6 +8,7 @@ Created on Wed Oct 30 17:12:33 2019
 import numpy as np
 import random as rd
 import string
+import pandas as pd
 #Results2018={'Movimento 5 stelle':0.327,'Centrosinistra':0.22,'Centrodestra':0.37,'LeU':0.03}
 #ResultsHyp1 ={'Movimento 5 stelle':0.18,'Centrosinistra':0.20,'Lega':0.35,'Centrodestra':0.15}
 #ResultsHyp2 ={'Centrosinistra':0.38,'Centrodestra':0.52}
@@ -26,6 +27,8 @@ class Montecarlo_electoral:
 			
 			raise Exception ("You didn't insert the right input\n",self.chooseinput," is not a right input")
 		
+	def Import_Results(self):
+	
 		if self.chooseinput == 'stinput':
 			
 			self.Npart     = int (input("Enter the number of parties\n"))
@@ -37,7 +40,13 @@ class Montecarlo_electoral:
 			
 		if self.chooseinput == 'csv':
 			
-			filename       = input("Enter the name of the file")		
+			filename       = input("Enter the name of the file\n")		
+			xls            = pd.read_excel(filename)
+			self.Parties   = xls.head(1)
+			self.Propval   = xls.head(2)
+			self.Propcoeff = xls.head(3)[1]
+			self.Majorcoeff= xls.head(4)[1]
+			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
 		
 		if self.chooseinput == 'txt':
 			
@@ -62,7 +71,7 @@ class Montecarlo_electoral:
 				
 		if(sum(self.Propval))>1:
 			self.check = False
-			raise Exception('The sum of the results cannot be larger than one!!! You made a mistake)
+			raise Exception('The sum of the results cannot be larger than one!!! You made a mistake')
 				   
 					   
 				   
