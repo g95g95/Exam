@@ -19,8 +19,10 @@ class Montecarlo_electoral:
 	def __init__ (self,chooseinput = 'stinput'):
 		
 		self.chooseinput = chooseinput
+		self.Results     = {}
 		
-		if self.chooseinput not in set(['stinput','excel','txt']):
+		
+		if self.chooseinput not in set(['stinput','csv','txt']):
 			
 			raise Exception ("You didn't insert the right input\n",self.chooseinput," is not a right input")
 		
@@ -28,24 +30,44 @@ class Montecarlo_electoral:
 			
 			self.Npart     = int (input("Enter the number of parties\n"))
 			self.Parties   = [input('Enter the name of the party number '+str(i+1)+'\n') for i in range(self.Npart)]
-			self.Propval   = [float(input('Enter the general results of'+str(Party)+'\t')) for Party in self.Parties]
-			self.Propcoef  = float(input('Enter the value of the proportional coefficient'))
-			self.Majorcoef = float(input('Enter the value of the majority coefficient'))
-			self.Results   = dict([(self.Party[i],self.Propval[i]) for i in range(self.Npart)])
+			self.Propval   = [float(input('Enter the general results of  '+str(Party)+'\t')) for Party in self.Parties]
+			self.Propcoef  = float(input('Enter the value of the proportional coefficient\n'))
+			self.Majorcoef = float(input('Enter the value of the majority coefficient\n'))
+			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(self.Npart)])
 			
-		if self.chooseinput == 'excel':
+		if self.chooseinput == 'csv':
 			
-			filename      = input("Enter the name of the file")		
+			filename       = input("Enter the name of the file")		
 		
 		if self.chooseinput == 'txt':
 			
-			filename      = input("Enter the name of the file")
-			file          = [line.strip() for line in open(filename)]
+			filename       = input("Enter the name of the file\n")
+			file           = [line.strip() for line in open(filename)]
+			self.Nparty    = len(file[0].split('\t'))
+			self.Parties   = file[0].split('\t')
+			self.Propval   = file[1].split('\t')
+			self.Propcoef  = float(file[2].split('\t')[1])
+			self.Majorcoef = float(file[3].split('\t')[1])
+			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(self.Nparty)])
+		
+		self.check = True
+				
+	def check_input(self) :
 			
-
 			
-			
-Montecarlo_electoral()		
+		for i in self.Propval:
+			if i>1:
+				self.check = False
+				raise Exception('The value you have inserted is larger than one! Unwirklich!')
+				
+		if(sum(self.Propval))>1:
+			self.check = False
+			raise Exception('The sum of the results cannot be larger than one!!! You made a mistake)
+				   
+					   
+				   
+		
+m = Montecarlo_electoral('txt')		
 	
     
 
