@@ -7,8 +7,9 @@ Created on Wed Oct 30 17:12:33 2019
 
 import numpy as np
 import random as rd
-import string
+#from string import lower
 import pandas as pd
+import math
 #Results2018={'Movimento 5 stelle':0.327,'Centrosinistra':0.22,'Centrodestra':0.37,'LeU':0.03}
 #ResultsHyp1 ={'Movimento 5 stelle':0.18,'Centrosinistra':0.20,'Lega':0.35,'Centrodestra':0.15}
 #ResultsHyp2 ={'Centrosinistra':0.38,'Centrodestra':0.52}
@@ -19,13 +20,17 @@ class Montecarlo_electoral:
 	
 	def __init__ (self,chooseinput = 'stinput'):
 		
-		self.chooseinput = chooseinput
+		self.chooseinput = chooseinput.lower()
 		self.Results     = {}
+		self.checkValue  		 = True
+		self.checkalpha 		 = True
+		self.checksingpercentage = True
+		self.checktotpercentage  = True
+		self.checkinput          = True
 		
-		
-		if self.chooseinput not in set(['stinput','csv','txt']):
-			
-			raise Exception ("You didn't insert the right input\n",self.chooseinput," is not a right input")
+		if self.chooseinput not in set(['stinput','excel','txt']):
+			self.checkinput = False
+			raise ValueError ("You didn't insert the right input\n",self.chooseinput," is not a right input")
 		
 	def Import_Results(self):
 	
@@ -38,14 +43,15 @@ class Montecarlo_electoral:
 			self.Majorcoef = float(input('Enter the value of the majority coefficient\n'))
 			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(self.Npart)])
 			
-		if self.chooseinput == 'csv':
+		if self.chooseinput == 'excel':
 			
-			filename       = input("Enter the name of the file\n")		
+			filename       = input("Enter the name of the file\n")	
 			xls            = pd.read_excel(filename)
-			self.Parties   = xls.head(1)
-			self.Propval   = xls.head(2)
-			self.Propcoeff = xls.head(3)[1]
-			self.Majorcoeff= xls.head(4)[1]
+			
+			self.Parties   = list(xls.columns)
+			self.Propval   = list(xls[Party][0] for Party in self.Parties)
+			self.Propcoeff = list([xls[Party][1] for Party in self.Parties])[:2]
+			self.Majorcoeff= list([xls[Party][2] for Party in self.Parties])[:2]
 			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
 		
 		if self.chooseinput == 'txt':
@@ -59,24 +65,46 @@ class Montecarlo_electoral:
 			self.Majorcoef = float(file[3].split('\t')[1])
 			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(self.Nparty)])
 		
-		self.check = True
-				
+
+				 
 	def check_input(self) :
 			
-			
+		for i in self.Parties:
+			if  math.isnan(i) or not i.islpha():
+				self.checaValue = False
+				raise ValueError('die Name den Parteien du hast eingefügt ist nicht richtig')
+		
+		
+		
 		for i in self.Propval:
+			if math.isnan(i):
+				self.checkValue = False
+				raise ValueError('The value you have inserted is not a number\n')
+			
+			if i.isalpha():
+				self.checkalpha = False
+				raise ValueError('There are letters in your Results!\n')
+			
 			if i>1:
-				self.check = False
-				raise Exception('The value you have inserted is larger than one! Unwirklich!')
+				self.checksingpercentage = False
+				raise ValueError('The value you have inserted is larger than one! Unwirklich!\n')
+			
+		
 				
 		if(sum(self.Propval))>1:
-			self.check = False
+			self.checktotpercentage = False
 			raise Exception('The sum of the results cannot be larger than one!!! You made a mistake')
-				   
+			
+		
+	
+	
+
+			   
 					   
 				   
 		
-m = Montecarlo_electoral('txt')		
+#m = Montecarlo_electoral('excel')
+#m.Import_Results()		
 	
     
 
