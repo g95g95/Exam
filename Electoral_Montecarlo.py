@@ -9,7 +9,7 @@ import numpy as np
 import random as rd
 import pandas as pd
 import math
-
+import matplotlib.pylab as plt
 
 
 
@@ -28,21 +28,21 @@ def max_key(d):#this method returns the key with the highest value of a dictiona
 class Montecarlo_electoral:
 	 
 	
-	def __init__ (self,chooseinput = 'stinput'):
+	def __init__ (self,chooseinput = 'stinput',filename = ''):
 		
-		self.Nedupties           = 0  
+		self.Ndeputies           = 630 
 		self.chooseinput 		 = chooseinput.lower()
 		self.Results      		 = {}
 		self.Propval 			 = []
 		self.Parties             = []
-		self.Majorcoef           = []
-		self.Propcoef            = []
+		self.Majorcoef           = 0.37
+		self.Propcoef            = 0.61
 		self.checkValue  		 = True
 		self.checkalpha 		 = True
 		self.checksingpercentage = True
 		self.checktotpercentage  = True
 		self.checkinput          = True
-
+		self.filename 			 = filename
 		
 		if self.chooseinput not in set(['stinput','excel','txt']):
 			self.checkinput = False
@@ -62,8 +62,9 @@ class Montecarlo_electoral:
 			
 		if self.chooseinput == 'excel':
 			
-			filename       = input("Enter the name of the file\n")	
-			xls            = pd.read_excel(filename)
+			
+			xls            = pd.read_excel(self.filename)
+
 			
 			self.Parties   = list(xls.columns)
 			self.Propval   = list(xls[Party][0] for Party in self.Parties)
@@ -74,8 +75,10 @@ class Montecarlo_electoral:
 
 		if self.chooseinput == 'txt':
 			
-			filename       = input("Enter the name of the file\n")
-			file           = [line.strip() for line in open(filename)]
+			
+			file           = [line.strip() for line in open(self.filename)]
+
+			
 			self.Nparty    = len(file[0].split('\t'))
 			self.Parties   = file[0].split('\t')
 			self.Propval   = file[1].split('\t')
@@ -104,14 +107,17 @@ class Montecarlo_electoral:
 		
 		
 		
-		for i in self.Parties:
+		for i in self.Parties: #I partiti devono avere nomi alfanumerici e non devono avere nomi uguali
 			
 			if i.isalnum():
 				self.checkinput = True
 			
 			else:
 				raise ValueError('die Name den Parteien du hast eingefügt ist nicht richtig')
-		
+			
+			if self.Parties.count(i)>1:
+				raise ValueError('There are' + str(self.Parties.count(i))+ ' with the same name!')
+				
 		
 		
 		for i in self.Propval:
@@ -176,58 +182,37 @@ class Montecarlo_electoral:
 			seats[max_key(Resultscopy)]+=1
 		return seats
 	
-	def Complete_Simulation(self):
+	def Complete_Simulation(self,N=1000):
+		self.allResults = []
 		seats = {key:0 for key in list(self.Results)}
 	#This function provides a valid estimation for the assigned number of seats
 	#by averaging over 10000 simulation. This result will be used for confrontation with real data
-		for i in range(1000):
+		for i in range(N):
+			newseats = self.Fill_Seats()
+			self.allResults.append(newseats.copy())
 			for key in list(self.Results):
-				seats[key]+=self.Fill_Seats()[key]
-		average_seats = {key:int(seats[key]/1000.) for key in list(self.Results.keys()) }
+				
+				seats[key]+=newseats[key]
+			
+			 
+		average_seats = {key:int(seats[key]/N) for key in list(self.Results.keys()) }
 		return average_seats
+
+
 	
-    
-
-#m = Montecarlo_electoral('excel')
-#m.Import_Results()
-#m.check_input()
-#m.Complete_Simulation()
-
+	def Graphics(self):
+		
+	
+	
+	
+	
 
 """
-def max_key(d):#this method returns the key with the highest value of a dictionary
-    max_key = ''
-    max_value = 0
-    for key in list(d.keys()):
-        if d[key]>max_value:
-            max_key = key
-            max_value = d[key]
-        elif d[key] == max_value:
-            max_key = rd.choice([key,max_key])
-    return max_key    
-        
+m = Montecarlo_electoral('txt')
+m.Import_Results()
 
-        
-def Fill_Seats(N,Results,weight_maj,weight_prop): 
-	#This method runs the Montecarlo's algorythm for each collegium. It can be
-	#performed using different weights according to the electoral law we are considering
-	seats = {key:int(Results[key]*N*weight_prop)+int(Results[key]*(1-sum(list(Results.values())))) for key in list(Results.keys())}
-	for i in range (int(N*weight_maj)):
-		Resultscopy = Results.copy()
-		Resultscopy = {key:Results[key]*np.random.rand() for key in Results.keys()}#this is the core of the program
-		seats[max_key(Resultscopy)]+=1
-	return seats
-
-def Complete_Simulation(N,Results,weight_maj,weight_prop):
-	seats = {key:0 for key in list(Results)}
-	#This function provides a valid estimation for the assigned number of seats
-	#by averaging over 10000 simulation. This result will be used for confrontation
-	with real data
-	for i in range(10000):
-		for key in list(Results):
-			seats[key]+=Fill_Seats(N,Results,weight_maj,weight_prop)[key]
-	average_seats = {key:int(seats[key]/10000.) for key in list(Results.keys()) }
-	return average_seats
+m.check_input()
+m.Complete_Simulation()
 
 def winning_min_seats(Party,min_seats,Results):
 	wins = 0
