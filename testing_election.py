@@ -17,13 +17,41 @@ def test_constructor_Montecarlo():
 	with pytest.raises(ValueError):
 		m = Montecarlo_electoral(chooseinput = 'not the right input')
 	
-def test_Import_Results():
-	m = Montecarlo_electoral()	
-	with 
+def test_check_input():
+	m = Montecarlo_electoral()
+	m.Parties = rd.choice([['',''],[]])
+	with pytest.raises(ValueError):
+		m.check_input()
+	m.Propval = rd.choice([['',''],[]])
+	with pytest.raises(ValueError):
+		m.check_input()
+	m.Propval = [1,0.3,0.3]
+	with pytest.raises(ValueError):
+		m.check_input()
+	m.Propval = [0.2,0.3,0.5,0.1]
+	with pytest.raises(ValueError):
+		m.check_input()
 	
 	
-
+	m.Propcoef	= rd.choice(['','alpha','01'])
+	with pytest.raises(ValueError):
+		m.check_input()
+		
+	m.Majorcoef	= rd.choice(['','alpha','01'])
+	with pytest.raises(ValueError):
+		m.check_input()	
+		
+	m.Propcoef  = 1.5
+	with pytest.raises(ValueError):
+		m.check_input()
 	
+	m.Majorcoef = 1.5	
+	with pytest.raises(ValueError):
+		m.check_input()
+		
+	m.Propcoef,m.Majorcoef = 0.6,0.5
+	with pytest.raises(ValueError):
+		m.check_input()
 	
 	
 	
