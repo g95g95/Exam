@@ -7,21 +7,36 @@ Created on Wed Oct 30 17:12:33 2019
 
 import numpy as np
 import random as rd
-#from string import lower
 import pandas as pd
 import math
-#Results2018={'Movimento 5 stelle':0.327,'Centrosinistra':0.22,'Centrodestra':0.37,'LeU':0.03}
-#ResultsHyp1 ={'Movimento 5 stelle':0.18,'Centrosinistra':0.20,'Lega':0.35,'Centrodestra':0.15}
-#ResultsHyp2 ={'Centrosinistra':0.38,'Centrodestra':0.52}
-#Seats2018  ={'Movimento 5 stelle':221,'Centrosinistra':109,'Centrodestra':260,'LeU':22} #excluding abroad seats
+
+
+
+
+
+def max_key(d):#this method returns the key with the highest value of a dictionary
+    max_key = ''
+    max_value = 0
+    for key in list(d.keys()):
+        if d[key]>max_value:
+            max_key = key
+            max_value = d[key]
+        elif d[key] == max_value:
+            max_key = rd.choice([key,max_key])
+    return max_key    
 
 class Montecarlo_electoral:
 	 
 	
 	def __init__ (self,chooseinput = 'stinput'):
 		
-		self.chooseinput = chooseinput.lower()
-		self.Results     = {}
+		self.Nedupties           = 0  
+		self.chooseinput 		 = chooseinput.lower()
+		self.Results      		 = {}
+		self.Propval 			 = []
+		self.Parties             = []
+		self.Majorcoef           = []
+		self.Propcoef            = []
 		self.checkValue  		 = True
 		self.checkalpha 		 = True
 		self.checksingpercentage = True
@@ -42,6 +57,7 @@ class Montecarlo_electoral:
 			self.Propval   = [eval(input('Enter the general results of  '+str(Party)+'\t')) for Party in self.Parties]
 			self.Propcoef  = eval(input('Enter the value of the proportional coefficient\n'))
 			self.Majorcoef = eval(input('Enter the value of the majority coefficient\n'))
+			self.Ndeputies = eval(input('Enter the value of the number of deputies\n'))
 			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(self.Npart)])
 			
 		if self.chooseinput == 'excel':
@@ -53,8 +69,9 @@ class Montecarlo_electoral:
 			self.Propval   = list(xls[Party][0] for Party in self.Parties)
 			self.Propcoef  = list([xls[Party][1] for Party in self.Parties])[1]
 			self.Majorcoef = list([xls[Party][2] for Party in self.Parties])[1]
+			self.Ndeputies = list([xls[Party][3] for Party in self.Parties])[1]
 			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
-		
+
 		if self.chooseinput == 'txt':
 			
 			filename       = input("Enter the name of the file\n")
@@ -64,6 +81,7 @@ class Montecarlo_electoral:
 			self.Propval   = file[1].split('\t')
 			self.Propcoef  = eval(file[2].split('\t')[1])
 			self.Majorcoef = eval(file[3].split('\t')[1])
+			self.Ndeputies = eval(file[4].split('\t')[1])
 			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(self.Nparty)])
 		
 
@@ -148,15 +166,32 @@ class Montecarlo_electoral:
 			raise ValueError('Something is wrong with the values of the two coefficients\n')
 			   
 				   
-		
-m = Montecarlo_electoral('txt')
-m.Import_Results()		
+	def Fill_Seats(self): 
+	#This method runs the Montecarlo's algorythm for each collegium. It can be
+	#performed using different weights according to the electoral law we are considering
+		seats = {key:int(self.Results[key]*self.Ndeputies*self.Propcoef)+int(self.Results[key]*(1-sum(list(self.Results.values())))) for key in list(self.Results.keys())}
+		for i in range (int(self.Ndeputies*self.Majorcoef)):
+			Resultscopy = self.Results.copy()
+			Resultscopy = {key:self.Results[key]*np.random.rand() for key in self.Results.keys()}#this is the core of the program
+			seats[max_key(Resultscopy)]+=1
+		return seats
+	
+	def Complete_Simulation(self):
+		seats = {key:0 for key in list(self.Results)}
+	#This function provides a valid estimation for the assigned number of seats
+	#by averaging over 10000 simulation. This result will be used for confrontation with real data
+		for i in range(1000):
+			for key in list(self.Results):
+				seats[key]+=self.Fill_Seats()[key]
+		average_seats = {key:int(seats[key]/1000.) for key in list(self.Results.keys()) }
+		return average_seats
 	
     
 
-
-
-
+#m = Montecarlo_electoral('excel')
+#m.Import_Results()
+#m.check_input()
+#m.Complete_Simulation()
 
 
 """
