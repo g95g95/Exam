@@ -113,9 +113,13 @@ def test_Complete_Simulation():
 	
 	
 	
-	
-	
-	
+def test_Graphics():
+	m = Electoral_Montecarlo.Montecarlo_electoral()
+	m.Results = {'A':0.33,'B':0.15,'C':0.27,'D':0.25}
+	with pytest.raises(ValueError):
+		m.Graphics({'t':0.33,'e':0.15,'s':0.27,'t':0.25})
+		m.Graphics({'t':0.33})	
+		
 	
 	
 	

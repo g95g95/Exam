@@ -37,10 +37,6 @@ class Montecarlo_electoral:
 		self.Parties             = []
 		self.Majorcoef           = 0.37
 		self.Propcoef            = 0.61
-		self.checkValue  		 = True
-		self.checkalpha 		 = True
-		self.checksingpercentage = True
-		self.checktotpercentage  = True
 		self.checkinput          = True
 		self.filename 			 = filename
 		
@@ -183,13 +179,14 @@ class Montecarlo_electoral:
 		return seats
 	
 	def Complete_Simulation(self,N=1000):
-		self.allResults = []
+		self.allResults = {}
 		seats = {key:0 for key in list(self.Results)}
 	#This function provides a valid estimation for the assigned number of seats
 	#by averaging over 10000 simulation. This result will be used for confrontation with real data
+		self.allResults = {key:[self.Fill_Seats()[key] for i in range (N)] for key in list(self.Results.keys())}
 		for i in range(N):
 			newseats = self.Fill_Seats()
-			self.allResults.append(newseats.copy())
+			
 			for key in list(self.Results):
 				
 				seats[key]+=newseats[key]
@@ -200,36 +197,51 @@ class Montecarlo_electoral:
 
 
 	
-	def Graphics(self):
+	def Graphics(self,real = []): #here the things I need to check is that the keys of real must be the same of final
 		
+		final   = self.Complete_Simulation()
+		bins = np.linspace(0,self.Ndeputies,int(self.Ndeputies/2))
+		
+		if len(real) == 0:
+			
+			
+			for i in self.Parties:
+				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim')
+		
+		if len(real) !=0:
+			
+			if len(real) != len(final):
+				raise ValueError ('There is not the same number of both real ad simulated parties!')
+			
+			if final.keys() != real.keys():
+				raise ValueError ('The simulated Parties and the real parties seem to have different names!')
+			
+			
+			
+			for i in self.Parties:
+				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim')
+				plt.hist(real[i],bins,alpha = 0.5,label = i + 'real')
+			
+			
+		plt.xlabel('Seats')
+		plt.legend(loc='upper right')
+		plt.savefig("Histogram-Confrontation.png")
+		plt.close()
 	
-	
-	
-	
+		for i in self.Parties:
+			if self.Results[i]<0.05:
+				continue
+			plt.hist(self.allResults[i],bins,alpha = 0.5,label = i)
+			
 
-"""
-m = Montecarlo_electoral('txt')
-m.Import_Results()
+		plt.xlabel('Seats')
+		plt.legend(loc='upper right')
+		plt.savefig("Numbers of possible results")
+		plt.close()
 
-m.check_input()
-m.Complete_Simulation()
 
-def winning_min_seats(Party,min_seats,Results):
-	wins = 0
-	#This method returns how many times a certain party can obtain more than
-   # a specified number of seats
-	for i in range(10000):
-		current_situation = Fill_Seats(0.61,0.37,Results)
-		if (current_situation[Party]>min_seats):
-			wins +=1
-			print(Party,"got",current_situation[Party],"seats")
-	return wins
-    
 
-def Possible_Results(N,Results,weight_maj,weight_prop,Iterations):
-	#This function returns a dicionary having the parties has keys and each value
-	#is a list of all the results obtained all over an N iteration of Fill_Seats()
-	possible_results = {key:[Fill_Seats(N,Results,weight_maj,weight_prop)[key]for i in range(Iterations)]for key in list(Results)}
-	return possible_results
 
-"""
+
+
+
