@@ -28,7 +28,7 @@ def max_key(d):#this method returns the key with the highest value of a dictiona
 class Montecarlo_electoral:
 	 
 	
-	def __init__ (self,chooseinput = 'stinput',filename = ''):
+	def __init__ (self,chooseinput = 'stinput',filename = '',election = 'Italian_2018_General_Election'):
 		
 		self.Ndeputies           = 630 #Fixed on italian conditions
 		self.chooseinput 		 = chooseinput.lower()
@@ -39,6 +39,7 @@ class Montecarlo_electoral:
 		self.Propcoef            = 0.61 #Fixed on italian conditions
 		self.checkinput          = True #This will reveal wether we have an Input problem or not
 		self.filename 			 = filename
+		self.election            = election
 		
 		if self.chooseinput not in set(['stinput','excel','txt']): #the choice of the input must be valid
 			self.checkinput = False
@@ -229,7 +230,8 @@ class Montecarlo_electoral:
 			
 		plt.xlabel('Seats')
 		plt.legend(loc='upper right')
-		plt.savefig("Histogram-Confrontation.png") #saving the histogram
+		plt.title(self.election)
+		plt.savefig("Histogram-Confrontation_for_"+self.election+".png") #saving the histogram
 		plt.close()
 	
 		for i in self.Parties:
@@ -240,7 +242,7 @@ class Montecarlo_electoral:
 
 		plt.xlabel('Seats')
 		plt.legend(loc='upper right')
-		plt.savefig("Numbers of possible results")
+		plt.savefig("Numbers of possible results_for_"+self.election+'.png')
 		plt.close()
 
 
