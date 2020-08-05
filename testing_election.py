@@ -12,10 +12,10 @@ from hypothesis import given
 import hypothesis.strategies as st
 
 
-def test_max_key():
+def test_max_key(): #key with the max value in a dictionary
 	examples = dict([('A',400),('B',200),('C',400),('D',300)])
 	mk       = Electoral_Montecarlo.max_key(examples) 
-	assert (mk == 'A' or mk =='C')
+	assert (mk == 'A' or mk =='C') #randomly chosen when two keys have the same value.
 
 Results2018={'Movimento 5 stelle':0.327,'Centrosinistra':0.22,'Centrodestra':0.37,'Leu':0.03}
 #ResultsHyp ={'Movimento 5 stelle':0.18,'Centrosinistra':0.20,'Lega':0.35,'Centrodestra':0.15}
@@ -25,14 +25,14 @@ Seats2018  ={'Movimento 5 stelle':221,'Centrosinistra':113,'Centrodestra':260,'L
 
 
 
-def test_constructor_Montecarlo():
+def test_constructor_Montecarlo(): #testing for the proper initializion of the object of the class.
 	with pytest.raises(ValueError):
 		m = Electoral_Montecarlo.Montecarlo_electoral(chooseinput = 'not the right input')
 	
 	
 	
 	
-def test_Import_Result():
+def test_Import_Result(): #testing if the input files exist
 	m = Electoral_Montecarlo.Montecarlo_electoral('txt','Not an existing file')
 	with pytest.raises(FileNotFoundError):
 		m.Import_Results()
@@ -43,30 +43,30 @@ def test_Import_Result():
 	
 	
 	
-def test_check_input():
+def test_check_input(): #Testing if the imported data can be used or not
 	m = Electoral_Montecarlo.Montecarlo_electoral()
-	m.Parties = rd.choice([['',''],[]])
+	m.Parties = rd.choice([['',''],[]]) #Parties were notproperly harvested
 	with pytest.raises(ValueError):
 		m.check_input()
 	
-	m.Parties = ['Pd','Pd','Lega','FDI']
+	m.Parties = ['Pd','Pd','Lega','FDI'] #Two parties with the same name, impossible
 	with pytest.raises(ValueError):
 		m.check_input()
 	
-	m.Propval = rd.choice([['',''],[]])
+	m.Propval = rd.choice([['',''],[]])#Results were not properly harvested
 	with pytest.raises(ValueError):
 		m.check_input()
 		
-	m.Propval = [1,0.3,0.3]
+	m.Propval = [1,0.3,0.3] #Results are not consistent
 	with pytest.raises(ValueError):
 		m.check_input()
 		
-	m.Propval = [0.2,0.3,0.5,0.1]
+	m.Propval = [0.2,0.3,0.5,0.1] #Results are not consistent
 	with pytest.raises(ValueError):
 		m.check_input()
 	
 	
-	m.Propcoef	= rd.choice(['','alpha','01'])
+	m.Propcoef	= rd.choice(['','alpha','01']) #Coefficients cannot be properly interpreted
 	with pytest.raises(ValueError):
 		m.check_input()
 		
@@ -74,7 +74,7 @@ def test_check_input():
 	with pytest.raises(ValueError):
 		m.check_input()	
 		
-	m.Propcoef  = 1.5
+	m.Propcoef  = 1.5 #Coefficients are not consistent
 	with pytest.raises(ValueError):
 		m.check_input()
 	
@@ -117,8 +117,8 @@ def test_Graphics():
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.Results = {'A':0.33,'B':0.15,'C':0.27,'D':0.25}
 	with pytest.raises(ValueError):
-		m.Graphics({'t':0.33,'e':0.15,'s':0.27,'t':0.25})
-		m.Graphics({'t':0.33})	
+		m.Graphics({'t':0.33,'e':0.15,'s':0.27,'t':0.25}) #they have not the same names
+		m.Graphics({'t':0.33})	#they have not the same number of elements!
 		
 	
 	

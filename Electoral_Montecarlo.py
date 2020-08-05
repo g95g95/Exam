@@ -22,7 +22,7 @@ def max_key(d):#this method returns the key with the highest value of a dictiona
             max_key = key
             max_value = d[key]
         elif d[key] == max_value:
-            max_key = rd.choice([key,max_key])
+            max_key = rd.choice([key,max_key]) #If two keys have the same value the highest key will be randomly chosen between the twos
     return max_key    
 
 class Montecarlo_electoral:
@@ -30,17 +30,17 @@ class Montecarlo_electoral:
 	
 	def __init__ (self,chooseinput = 'stinput',filename = ''):
 		
-		self.Ndeputies           = 630 
+		self.Ndeputies           = 630 #Fixed on italian conditions
 		self.chooseinput 		 = chooseinput.lower()
 		self.Results      		 = {}
 		self.Propval 			 = []
 		self.Parties             = []
-		self.Majorcoef           = 0.37
-		self.Propcoef            = 0.61
-		self.checkinput          = True
+		self.Majorcoef           = 0.37 #Fixed on italian conditions
+		self.Propcoef            = 0.61 #Fixed on italian conditions
+		self.checkinput          = True #This will reveal wether we have an Input problem or not
 		self.filename 			 = filename
 		
-		if self.chooseinput not in set(['stinput','excel','txt']):
+		if self.chooseinput not in set(['stinput','excel','txt']): #the choice of the input must be valid
 			self.checkinput = False
 			raise ValueError ("You didn't insert the right input\n",self.chooseinput," is not a right input")
 		
@@ -48,6 +48,7 @@ class Montecarlo_electoral:
 	
 		if self.chooseinput == 'stinput':
 			
+			#initializing all the main paramteters of the class
 			self.Npart     = int (input("Enter the number of parties\n"))
 			self.Parties   = [input('Enter the name of the party number '+str(i+1)+'\n') for i in range(self.Npart)]
 			self.Propval   = [eval(input('Enter the general results of  '+str(Party)+'\t')) for Party in self.Parties]
@@ -59,9 +60,9 @@ class Montecarlo_electoral:
 		if self.chooseinput == 'excel':
 			
 			
-			xls            = pd.read_excel(self.filename)
+			xls            = pd.read_excel(self.filename) #opening of the excel files as a Dataframe
 
-			
+			#initializing all the main parameters of the class
 			self.Parties   = list(xls.columns)
 			self.Propval   = list(xls[Party][0] for Party in self.Parties)
 			self.Propcoef  = list([xls[Party][1] for Party in self.Parties])[1]
@@ -72,9 +73,9 @@ class Montecarlo_electoral:
 		if self.chooseinput == 'txt':
 			
 			
-			file           = [line.strip() for line in open(self.filename)]
+			file           = [line.strip() for line in open(self.filename)] #opening of the file
 
-			
+			#initializing all the main parameters of the class
 			self.Nparty    = len(file[0].split('\t'))
 			self.Parties   = file[0].split('\t')
 			self.Propval   = file[1].split('\t')
@@ -86,8 +87,8 @@ class Montecarlo_electoral:
 
 				 
 	def check_input(self) :
-			
-		if len(self.Parties) == 0:
+			#The following may happen when no data is acquired
+		if len(self.Parties) == 0: 
 			raise ValueError('No names are inserted')
 		
 		if len(self.Propval) == 0:
@@ -103,8 +104,7 @@ class Montecarlo_electoral:
 		
 		
 		
-		for i in self.Parties: #I partiti devono avere nomi alfanumerici e non devono avere nomi uguali
-			
+		for i in self.Parties: #The parties must have alfanumeric names and besides they should not have the same names			
 			if i.isalnum():
 				self.checkinput = True
 			
@@ -116,7 +116,8 @@ class Montecarlo_electoral:
 				
 		
 		
-		for i in self.Propval:
+		for i in self.Propval:# The results must be expressed in decimal form. They must be interpreted as 
+			#floats and their sum cannot be larger than one of course.
 			
 			try:
 				i = float(i)
@@ -132,13 +133,15 @@ class Montecarlo_electoral:
 			
 			
 		if self.checkinput == True:
-			self.Propval = [float(i) for i in self.Propval]
-			self.Results =  dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
+			self.Propval = [float(i) for i in self.Propval] #if they can be viewed as float we can convert them into.
+			self.Results =  dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])#now our Results dict is completed
 
 
 			
 		
-				
+		#the value of the coefficients(both Proportionals and Majoritary) is performed through 
+		
+		
 		if(sum(self.Propval))>1:
 			self.checkinput = False
 			raise ValueError('The sum of the results cannot be larger than one!!! You made a mistake')
@@ -182,7 +185,7 @@ class Montecarlo_electoral:
 		self.allResults = {}
 		seats = {key:0 for key in list(self.Results)}
 	#This function provides a valid estimation for the assigned number of seats
-	#by averaging over 10000 simulation. This result will be used for confrontation with real data
+	#by averaging over 1000 simulation. This result will be used for confrontation with real data
 		self.allResults = {key:[self.Fill_Seats()[key] for i in range (N)] for key in list(self.Results.keys())}
 		for i in range(N):
 			newseats = self.Fill_Seats()
@@ -197,16 +200,17 @@ class Montecarlo_electoral:
 
 
 	
-	def Graphics(self,real = []): #here the things I need to check is that the keys of real must be the same of final
+	def Graphics(self,real = {},nameofelections=''): #here the things I need to check is that the keys of real must be the same of final and 
+		#the two dictionaries must have the same lenght
 		
-		final   = self.Complete_Simulation()
-		bins = np.linspace(0,self.Ndeputies,int(self.Ndeputies/2))
+		final   = self.Complete_Simulation() #Running the simulation
+		bins = np.linspace(0,self.Ndeputies,int(self.Ndeputies/2)) #Creating an adeguate linspace
 		
 		if len(real) == 0:
 			
 			
 			for i in self.Parties:
-				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim')
+				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim') #Creating the single histogram
 		
 		if len(real) !=0:
 			
@@ -220,18 +224,18 @@ class Montecarlo_electoral:
 			
 			for i in self.Parties:
 				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim')
-				plt.hist(real[i],bins,alpha = 0.5,label = i + 'real')
+				plt.hist(real[i],bins,alpha = 0.5,label = i + 'real') #creating an histogram with both real and results data displayed
 			
 			
 		plt.xlabel('Seats')
 		plt.legend(loc='upper right')
-		plt.savefig("Histogram-Confrontation.png")
+		plt.savefig("Histogram-Confrontation.png") #saving the histogram
 		plt.close()
 	
 		for i in self.Parties:
 			if self.Results[i]<0.05:
 				continue
-			plt.hist(self.allResults[i],bins,alpha = 0.5,label = i)
+			plt.hist(self.allResults[i],bins,alpha = 0.5,label = i) #Plotting the histogram with all possible results throughout the simulation.
 			
 
 		plt.xlabel('Seats')
