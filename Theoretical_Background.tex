@@ -15,37 +15,7 @@
 \usepackage[latin1]{inputenc}
 
 \begin{document}
-\chapter*{The Ising Model through Montecarlo method}
-\section*{Brief theoric overview of the ferromagnetism and Ising Model}
-An atom in a lattice is of course supposed to make bonds. How will the spins be arranged after? The resulting molecular orbital will thus be bonding or anitbonding; as the name suggests the bonding(where spins allign antisimmetrically) state is the most energtically favoured to create bonds. This happens because of the simmetricity of the radial-total wave function(the total wave function must remain antisimmetric). So what happens in Fe?\\ 
-We know Fe to form bonds with its further shell 4s; the electrons in this shell will combine in order to be arranged in a singlet state since it's the most energetically convenient to form bonds; the orbital 3d also overgoes an exchange interaction but in this case things go differently because the exchange integral(a physical quantity underlying the orbital's overlapping) is positive hence making the triplet state the most energetically favoured. That causes spins to allign parallelly. The single-electron spin exchange hamiltonian(being J the exchange interaction and $S_{i},S_{j}$ the spins) reads like:
-\begin{equation}$$
-	$H_{i}^{exchange} = -2\sum_{i\neq j} J^{Exchange}S_{i}S_{j}$
-	\label{exhcange_hamiltonian}
-$$\end{equation}
-A different approach to understand magnetic behavoiur of solids is to consider particulat microscopit models for magnetic interaction.\ref{exhcange_hamiltonian} can be simplified by simply considering the sum as performed throughout the nearest neighbours. In the Ising models spins are only allowed to point up or down, i.e. we only consider the x component of the spin. The hamiltonian will hence read like :
-\begin{equation}$$
-	$H_{Ising} = -\sum_{nearest neighbours}J S_{i}S_{j}$
-$$\end{equation}
-The code I wrote focused on a 2D lattice made by N*N sites which spins are placed on.To maximize the interaction of the spins at the edges of the lattice they are made to interact with the spins at the geometric opposite edges of the lattice.\\
-This is referred to as periodic boundary condition (pbc) and can be visualized better if we consider the 2d lattice being folded into a 3d torus with spins being on the surface of such a topological structure.\\
-The system will undergo a phase-transition from magnetic-reached order to magnetic disorder above a certain crytical temperature $T_{c}$(we suppose to operate in absence of external magnetic field). Once reached the order, the system will tend to remain in the same state since the energetic cost to break the order phase will be too high.\\
-As order parameter for the phase transition we 're going to use the absolute magnetization, defined as:
-\begin{equation}$$
-\centering
-	$M = \frac{<m>}{N*N}$
-	\label{abs_Magn}
-$$\end{equation}
 
-\section*{Metropolis algorythm}
-The algorithm will proceed as follows:
-\begin{itemize}
-	\item \textbf{Configuration}: we are going to initialize the NxN lattice with a random configuration of spins, hypotizing in can only assume the values [-0.5,+0.5] related to the different orientation of the spin along the third dimension.
-	\item \textbf{propose a move}: we are going to randomly choose a site of the lattice and we are going to compute the change in energy dE we would have if we flipped the sping. Considered the Ising hamiltonian, this quantity  will be $dE = 2*S_{site}*\sum_{nn}S$
-	\item \textbf{Accept or refuse the move }: The move we proposed will be accepted or refused according to the Metropolis algorythm. If dE<0 the move will be always accepted since it reduces the energy of the system. if dE>0 we can accept the move only if a generic random number between 0 and 1 is lesser than $e^{-dE/k_{B}T}$ being k the Boltzman constant which will be set to 1.
-\end{itemize}
-Of course we are going to loop over a consistent number of steps and continously repeat the last three points.\\
-\section*{How the repository works}
 
 \chapter*{Metropolis algorythm applied to electoral laws}
 A good electoral law should be a decent balancement of both representivity and governability. The first principle  can lead to proportional laws, the second to majoritary law. So in the last years electoral laws mixing these two features were experimented all over european democracies.\\
@@ -58,6 +28,54 @@ Of course there are many flaws to this algorithm which is totally unable to fore
 The algorithm might also be used to highlight some shortcoming of the specific electoral law we're dealing with. It might happen(it sounds absurd) that two parties obtaining almost the same results on national scale will have a completely different assignment of seats. Montecarlo could see that. In fact it is provided an histogram in the graphic part in which the distribution of different electoral simulation for each party are confronted. There is a slightly possibility that a party which got a lesser result could benefit a larger assignment of seats(overlapping between the tails'distributions).\\
 The appropriate number of steps for each simulation can be determined by knowing how many steps need to be performed to compute pi by exploiting Montecarlo methods.\\
 \section*{How the repository works}
-in the file \textit{\textbf{Electoral$\_$Montecarlo.py}}, all the most important functions are defined.
+in the file \textit{\textbf{Electoral$\_$Montecarlo.py}}, a class Montecarlo$\_$electoral is defined. All the methods that will be used in \textit{\textbf{Main$\_$electoral.py}} are contained within it.\\ The program also have a pytest routine \textbf{texting$\_$eletcoral.py} where all the methods are tested
+First of all I have defined the method max$\_$key that returns the key with maximum value within a dictionary. Its purpose will be clear after.
+\begin{itemize}
+	
+
+\item We start with the definition of the constructor of our class that takes two defaults argument. The first is chooseinput by which we can decide which type of input we can use. It is set on stinput that will allow to write the parameters we need from the standard input of the Console. There are two inputs, "excel" and "txt" that allows to harvest the data from excel or txt files. The second argument of the constructor is hence the filename(including its filepath) of the file we want to pick up data from.
+If a different word from \textit{stinput,excel,txt} is inserted a ValueError will be raised of course.\\
+\item Different variables of the class are defined. In particular we set the number of Deputies and the majoritary and proportional coefficients as the italian ones, but they can change as soon as we import results from different source.\\
+That is done via the second method, \textbf{Import$\_$Results()}. Through this method we acquire the values for the main paremeters we are interested at, i.e. the name of the parties and their Results in the elections(or in polls).\\
+The filling of the parameters can be performed in three different ways, depending on the input we have decided. For what concerns outer input, i.e. excel or txt files, a FileNotFoundError will be raised if filename doesn't correspond to any existing file  on our computers.\\
+\item The way data has to be assembled in a txt files is the following:
+\item The way data has to be assembled in an excel file is the following
+\item We can highlight that eventually the results we get is homogeneous for every input method we have chosen. Eventually we put together the parties'names and their results in a dictionary called Results and that will play a key role in the algorithm.
+\item The method \textbf{check$\_$input()} is important as well because it verifies that the data have been acquired accordingly. This means that the names of the parties must be alphanumeric, that the results of the parties must be interpreted as a number and that they must be consistent (the sum of the results can't be larger than 1, let alone the value of a single party) and both maj and prop coefficients must be consistent too (their sum can't be larger than 1 of course).\\
+If everything is correct, strings are converted into float and we can proceed with the algorithm.
+
+\item
+The method \textbf{Fill$\_$Seats()} is the core of the program since the algorithm is whithin it.\\ Starting from our Results dictionary at first we assign the seats corresponding to the proportional part and then we run a for cycle over all electoral collegia to assign the others, through the Montecarlo method I have explained above. Eventually this method returns a dictionary with the name of the parties as keys and the number of Seats achieved in a simulation.\\
+\item Since we are dealing with stocastic processes, we want to eliminate aleatority and we can do that by performing many times (1000)  \textbf{Fill$\_$Seats()}. That is done thorugh \textbf{Complete$\_$Simulation()} which eventually returns a dictionary of the same shape of \textbf{Fill$\_$Seats()} but this times the values of the Seats have been mediated and so we expect the result to be closer to the true Result.\\
+This method also returns a class parameter \textbf{allResults} which is a dictionary with keys displayed by the name of each party and values as a list of the different values the party has achieved throughout the whole simulation. It will be very important in the graphic part
+We can check that in the testing module, where the algorithm was tested with 2018 italian general elections. We asked a 5$\%$(this algorithm cannot foresee the seats assigned abroad) discrepancy between the simulated results and the actual number of seats and the test was passed.
+\item
+Let's now take a glance at the graphic part that is useful to graphically visualize our Results. It takes place through the method \textbf{Graphics} that has 1 argument set as an empty dictionary named "real" by default. When the function is called and no argument is put within ist brackets that means we just want to display the simulated data. Conversely if we insert a dictionary as real,that dictionary should represent the real results of the election we were simultaing. That also means that  we want to display both the simulated results and the real ones.\\
+Of course we need to pay attention at how the real dictionary is built up. We have to make sure that it has the same number of parties and that the names of the parties are the same, otherwise a ValueError will be raised (that was checked in the pytest routine).
+\item
+\textbf{Graphics}() starts with the execution of \textbf{Complete$\_$Simulation()} and retunrs an histogram with just the simulated data or with both simulated data and real data depending on the value of the argument "real".\\
+The method also provides a second histrogram by exploiting the parameter \textbf{allResults} I have described above. So this second histogram will be a collection of the results for the different parties all over the simulations. This graph can be useful to evaluate the oscillations of the parties and to evaluate all possible oscillations during a general election.\\
+This method ends with the histograms being salved in folder where the programs code are currently located.
+\end{itemize}
+\section*{Main}
+\begin{itemize}
+\item
+The procedure we follow to execute the program is rather simple. We open the file  \textit{\textbf{Main$\_$electoral.py}} and we start initialating an object of the class Montecarlo$\_$electoral. If we choose an outer input, excel or txt we need to pay attention at the existence of such a file.
+\item
+Then we execute the method \textbf{Import$\_$Results()} to harvest the data we need from the input file
+\item
+We then execute the method \textbf{chech$\_$input} to check wether the input is good or not. If it is, it can be used for the algorithm. On the other hand if the input is not so good several ValueErrors may be raised, depending on the input mistake we have done and the method will return False.
+\item
+Now we can decide to simply display the results via standard output by simply calling the function \textbf{Complete$\_$Simulation} or through graphic display by means of the method \textbf{Graphics()}. In the example in \textit{\textbf{Main$\_$electoral.py}} I wanted to display the 2018 italian general elections and so I used the 2018 italian general elections result as an argument for \textbf{Graphics()}.
+\item
+The program will end with the graph saved and the simulation completed.
+
+\end{itemize}
+
+
+
+
+
+
 
 \end{document}
