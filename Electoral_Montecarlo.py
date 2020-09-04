@@ -14,7 +14,20 @@ import matplotlib.pylab as plt
 
 
 
-def max_key(d):#this method returns the key with the highest value of a dictionary
+def max_key(d):
+	"""
+	max_key takes a dictionary as a input and finds its highest key.
+
+	Parameters
+		d: is a generic dictionaries, whose values are numbers
+
+	Returns
+		 -a list of the keys having the highest value
+		 -If there is more than one element in the list, then the function simply
+		  takes the element with the lowest index.
+
+
+	"""
     max_key = ''
     max_value = 0
     for key in list(d.keys()):
