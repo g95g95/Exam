@@ -13,28 +13,6 @@ import matplotlib.pylab as plt
 
 
 
-"""
-def max_key(d):#this method returns the key with the highest value of a dictionary
-    This method generates a random spin configuration for the initial condition.
-       
-    Parameters
-        d : a generic dictionary with numeric values.
-    
-    Returns:
-        A list containing the keys with the highest values.
-        
-    Raise:
-        ValueError if values are not numbers.	
-    max_key = ''
-    max_value = 0
-	max_keys=[]
-    for key in list(d.keys()):
-        if d[key]>=max_value:
-            max_key = key
-            max_value = d[key]
-        #elif d[key] == max_value:
-         #   max_keys =  #If two keys have the same value the highest key will be randomly chosen between the twos
-    return max_key """   
 
 def max_key(d):
     """This method generates a random spin configuration for the initial condition.
@@ -46,175 +24,154 @@ def max_key(d):
         A list containing the keys with the highest values.
         
     Raise:
-        ValueError if values are not numbers."""	
-    max_keys = [i for i in list(a.keys()) if a[i] == max_val] #the list of the keys having the highest value of d
+        ValueError if values are not numbers."""
+    max_val = max(list(d.values()))
+    max_keys = [i for i in list(d.keys()) if d[i] == max_val] #the list of the keys having the highest value of d
     return (max_keys) #For our purposes it will be a list of just one element
 
 
 class Montecarlo_electoral:
 	 
 	
-	def __init__ (self,chooseinput = 'stinput',filename = '',election = 'Italian_2018_General_Election'):
-		
+	
+	def __init__ (self,election = 'Italian_2018_General_Election'):	
+		""" 
+    This is a class for mathematical operations on complex numbers. 
+      
+    Attributes: 
+        Ndeputies: The number of deputies elected during our election.
+        Results:   It is an empty dictionary that will be filled with the results of our simulation.
+		Propval:   The %results of the setted election.
+		Parties:   The names of the parties/coalitions in the setted election.
+		Majorcoef: The value of the majoritary coefficient.
+		Propcoef:  The value of the proportional coefficient.
+		Election:  The name of the setted election.
+		"""		
 		self.Ndeputies           = 630 #Fixed on italian conditions
-		self.chooseinput 		 = chooseinput.lower()
-		self.Results      		 = {}
 		self.Propval 			 = []
 		self.Parties             = []
 		self.Majorcoef           = 0.37 #Fixed on italian conditions
 		self.Propcoef            = 0.61 #Fixed on italian conditions
 		self.checkinput          = True #This will reveal wether we have an Input problem or not
-		self.filename 			 = filename
 		self.election            = election
-		
-		if self.chooseinput not in set(['stinput','excel','txt']): #the choice of the input must be valid
-			self.checkinput = False
-			raise ValueError ("You didn't insert the right input\n",self.chooseinput," is not a right input")
-		
-	def Import_Results(self):
+
+
 	
-		if self.chooseinput == 'stinput':
+	
+	
+	
+	def import_as_excel(self,filename):		
+		"""
+	This is a method that allows to import the data we need from an excel file.
+	
+	Parameters
+	
+		filename  :  It is simply the name of the file
+		"""
 			
-			#initializing all the main paramteters of the class
-			self.Npart     = int (input("Enter the number of parties\n"))
-			self.Parties   = [input('Enter the name of the party number '+str(i+1)+'\n') for i in range(self.Npart)]
-			self.Propval   = [eval(input('Enter the general results of  '+str(Party)+'\t')) for Party in self.Parties]
-			self.Propcoef  = eval(input('Enter the value of the proportional coefficient\n'))
-			self.Majorcoef = eval(input('Enter the value of the majority coefficient\n'))
-			self.Ndeputies = eval(input('Enter the value of the number of deputies\n'))
-			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(self.Npart)])
 			
-		if self.chooseinput == 'excel':
-			
-			
-			xls            = pd.read_excel(self.filename) #opening of the excel files as a Dataframe
+		xls            = pd.read_excel(filename) #opening of the excel files as a Dataframe
 
-			#initializing all the main parameters of the class
-			self.Parties   = list(xls.columns)
-			self.Propval   = list(xls[Party][0] for Party in self.Parties)
-			self.Propcoef  = list([xls[Party][1] for Party in self.Parties])[1]
-			self.Majorcoef = list([xls[Party][2] for Party in self.Parties])[1]
-			self.Ndeputies = list([xls[Party][3] for Party in self.Parties])[1]
-			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
+		#initializing all the main parameters of the class
+		self.Parties   = list(xls.columns)
+		self.Propval   = list(float(xls[Party][0]) for Party in self.Parties)
+		self.Propcoef  = list([float(xls[Party][1]) for Party in self.Parties])[1]
+		self.Majorcoef = list([float(xls[Party][2]) for Party in self.Parties])[1]
+		self.Ndeputies = list([float(xls[Party][3]) for Party in self.Parties])[1]
+		self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
 
-		if self.chooseinput == 'txt':
-			
-			
-			file           = [line.strip() for line in open(self.filename)] #opening of the file
+	def import_as_text(self,filename):	
+		"""
+	This is a method that allows to import the data we need from a txt file.
+	
+	Parameters
+	
+		filename  :  It is simply the name of the file
+		"""		
 
-			#initializing all the main parameters of the class
-			self.Nparty    = len(file[0].split('\t'))
-			self.Parties   = file[0].split('\t')
-			self.Propval   = file[1].split('\t')
-			self.Propcoef  = eval(file[2].split('\t')[1])
-			self.Majorcoef = eval(file[3].split('\t')[1])
-			self.Ndeputies = eval(file[4].split('\t')[1])
-			self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(self.Nparty)])
 		
+			
+		file           = [line.strip() for line in open(filename)] #opening of the file 
+			
+		#initializing all the main parameters of the class
+		self.Parties   = file[0].split('\t')
+		self.Propval   = (float(r) for r in file[1].split('\t'))
+		self.Propcoef  = float(file[2].split('\t')[1])
+		self.Majorcoef = float(file[3].split('\t')[1])
+		self.Ndeputies = float(file[4].split('\t')[1])
+		self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])	
 
-				 
-	def check_input(self) :
-			#The following may happen when no data is acquired
-		if len(self.Parties) == 0: 
-			raise ValueError('No names are inserted')
+
+	def check_import(self) :
+		"""
+		This method checks if the imported data makes sense.
 		
-		if len(self.Propval) == 0:
-			raise ValueError('No results are inserted')
-			
-		if self.Propcoef == None:
-			raise ValueError('No Proportional coefficient is inserted')
-			
-		if self.Majorcoef  == None:
-			raise ValueError('No major coefficience is inserted')
-		
-		
-		
-		
-		
-		for i in self.Parties: #The parties must have alfanumeric names and besides they should not have the same names			
-			if i.isalnum():
-				self.checkinput = True
-			
-			else:
-				raise ValueError('die Name den Parteien du hast eingefügt ist nicht richtig')
-			
+		Returns: True if everything okay, False is illogic data are imported.
+
+		"""		
+		for i in self.Parties:	
 			if self.Parties.count(i)>1:
-				raise ValueError('There are' + str(self.Parties.count(i))+ ' with the same name!')
-				
+				raise ValueError('There are' + str(self.Parties.count(i))+ 'parties with the same name!')
+				return False
 		
+		if sum(self.Propval)>1:
+			raise ValueError("The sum of the 'proportional' result is larger than 1. Not possible")
+			return False
 		
-		for i in self.Propval:# The results must be expressed in decimal form. They must be interpreted as 
-			#floats and their sum cannot be larger than one of course.
-			
-			try:
-				i = float(i)
-				
-			except ValueError:
-				self.checkinput = False
-				print('The value you have inserted is not a number\n')
-							
-			if i>1:
-				self.checkinput = False
-				raise ValueError('The value you have inserted: ' + str(i)+' is larger than one! Unwirklich!\n')
-			
-			
-			
-		if self.checkinput == True:
-			self.Propval = [float(i) for i in self.Propval] #if they can be viewed as float we can convert them into.
-			self.Results =  dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])#now our Results dict is completed
-
-
-			
-		
-		#the value of the coefficients(both Proportionals and Majoritary) is performed through 
-		
-		
-		if(sum(self.Propval))>1:
-			self.checkinput = False
-			raise ValueError('The sum of the results cannot be larger than one!!! You made a mistake')
-			
-		
-		try:
-			float( self.Majorcoef)
-		except ValueError:
-			self.checkinput = False
-			print('The value of Major coefficient you have inserted is not a number\n')
-	
-		if self.Majorcoef > 1:
-			raise ValueError ('The Major coefficient is larger than one!\n Not possible')
-			
-	
-		try:
-			float( self.Propcoef)
-		except ValueError:
-			self.checkinput = False
-			print('The value of Major coefficient you have inserted is not a number\n')
-	
-		if self.Propcoef > 1:
-			raise ValueError ('The Major coefficient is larger than one!\n Not possible')
 
 		   
-		if self.Propcoef<1 and self.Majorcoef<1 and self.Propcoef + self.Majorcoef >1:
-			raise ValueError('Something is wrong with the values of the two coefficients\n')
-			   
+		if  (self.Propcoef + self.Majorcoef) >1:
+			raise ValueError('Something is wrong with the values of the two coefficients\n')	
+			return False
+		
+		return True
+
+
+
 				   
-	def Fill_Seats(self): 
-	#This method runs the Montecarlo's algorythm for each collegium. It can be
-	#performed using different weights according to the electoral law we are considering
+	def Fill_Seats(self,seed = 1): 
+		"""
+		This method is the core of the program. It is used to fill the seats of our simulated Parliament.
+		
+		Arguments:
+		seed:    It is the seed to give as an argument to the random number, to reproduce the simulation.
+		
+		Returns: a dictionary in which each Party has its simulated number of seats.
+		"""
+		np.random.seed(seed) #we are setting the seed
 		seats = {key:int(self.Results[key]*self.Ndeputies*self.Propcoef)+int(self.Results[key]*(1-sum(list(self.Results.values())))) for key in list(self.Results.keys())}
+		
 		for i in range (int(self.Ndeputies*self.Majorcoef)):
+			
 			Resultscopy = self.Results.copy()
 			Resultscopy = {key:self.Results[key]*np.random.rand() for key in self.Results.keys()}#this is the core of the program
-			seats[max_key(Resultscopy)]+=1
+			
+			seats[rd.choice(max_key(Resultscopy))]+=1 #The Party whit the highest value is winning the seat
+		
 		return seats
 	
 	def Complete_Simulation(self,N=1000):
+		"""
+		This function provides a valid extimation for the assigned number of seats by
+		averagiong over 1000 iterations of the simulation.
+
+		Parameters
+		----------
+		N is the number of iterations. It is large enough for our simulation to converge
+
+		Returns
+		A dictionary with the Results of our total simulation.
+		It will be used to be confronted with real data in the case of past elections
+		or to foresee an upcoming election.
+		None.
+
+		"""
 		self.allResults = {}
 		seats = {key:0 for key in list(self.Results)}
-	#This function provides a valid estimation for the assigned number of seats
-	#by averaging over 1000 simulation. This result will be used for confrontation with real data
+		#this variables shall be used for the Graphic part.
 		self.allResults = {key:[self.Fill_Seats()[key] for i in range (N)] for key in list(self.Results.keys())}
 		for i in range(N):
+			
 			newseats = self.Fill_Seats()
 			
 			for key in list(self.Results):
@@ -227,10 +184,9 @@ class Montecarlo_electoral:
 
 
 	
-	def Graphics(self,real = {},nameofelections=''): #here the things I need to check is that the keys of real must be the same of final and 
-		#the two dictionaries must have the same lenght
+	def Graphics(self,final,real = {},nameofelections=''): 
 		
-		final   = self.Complete_Simulation() #Running the simulation
+		#final   = self.Complete_Simulation() #Running the simulation
 		bins = np.linspace(0,self.Ndeputies,int(self.Ndeputies/2)) #Creating an adeguate linspace
 		
 		if len(real) == 0:
