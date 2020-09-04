@@ -15,7 +15,7 @@ import hypothesis.strategies as st
 def test_max_key(): #key with the max value in a dictionary
 	examples = dict([('A',400),('B',200),('C',400),('D',300)])
 	mk       = Electoral_Montecarlo.max_key(examples) 
-	assert (mk == 'A' or mk =='C') #randomly chosen when two keys have the same value.
+	assert (mk == ['A','C']) #the function returns a list of this two elements.
 
 Results2018={'Movimento 5 stelle':0.327,'Centrosinistra':0.22,'Centrodestra':0.37,'Leu':0.03}
 #ResultsHyp ={'Movimento 5 stelle':0.18,'Centrosinistra':0.20,'Lega':0.35,'Centrodestra':0.15}
