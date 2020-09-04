@@ -13,30 +13,43 @@ import matplotlib.pylab as plt
 
 
 
-
-def max_key(d):
-	"""
-	max_key takes a dictionary as a input and finds its highest key.
-
-	Parameters
-		d: is a generic dictionaries, whose values are numbers
-
-	Returns
-		 -a list of the keys having the highest value
-		 -If there is more than one element in the list, then the function simply
-		  takes the element with the lowest index.
-
-
-	"""
+"""
+def max_key(d):#this method returns the key with the highest value of a dictionary
+    This method generates a random spin configuration for the initial condition.
+       
+    Parameters
+        d : a generic dictionary with numeric values.
+    
+    Returns:
+        A list containing the keys with the highest values.
+        
+    Raise:
+        ValueError if values are not numbers.	
     max_key = ''
     max_value = 0
+	max_keys=[]
     for key in list(d.keys()):
-        if d[key]>max_value:
+        if d[key]>=max_value:
             max_key = key
             max_value = d[key]
-        elif d[key] == max_value:
-            max_key = rd.choice([key,max_key]) #If two keys have the same value the highest key will be randomly chosen between the twos
-    return max_key    
+        #elif d[key] == max_value:
+         #   max_keys =  #If two keys have the same value the highest key will be randomly chosen between the twos
+    return max_key """   
+
+def max_key(d):
+    """This method generates a random spin configuration for the initial condition.
+       
+    Parameters
+        d : a generic dictionary with numeric values.
+    
+    Returns:
+        A list containing the keys with the highest values.
+        
+    Raise:
+        ValueError if values are not numbers."""	
+    max_keys = [i for i in list(a.keys()) if a[i] == max_val] #the list of the keys having the highest value of d
+    return (max_keys) #For our purposes it will be a list of just one element
+
 
 class Montecarlo_electoral:
 	 
