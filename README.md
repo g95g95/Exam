@@ -22,6 +22,13 @@ Actually if we run very long simulations (milions and milions of iterations) a s
 The algorithm might also be used to highlight some shortcoming of the specific electoral law we're dealing with. It migh happen (even if it sounds absurd) that two parties obtainin almost the same results on national scale will have a completely different assignment of seats and this algorithm can see to that
 
 
+# How to utilize the program
+
+* The procedure we follow to execute the program is rather simple. in [Main_electoral.py](https://github.com/g95g95/Exam) we initialize an object of the class Montecarlo_electoral.
+
+* Then we harvest the data we need through the methods **import_as_excel** and **import_as_txt** 
+
+
 # Structure of the Repository
 
 In the file [Electoral_Montecarlo.py](https://github.com/g95g95/Exam) a class *Montecarlo_electoral is defined*. All the methods that will be used in [Main_electoral.py](https://github.com/g95g95/Exam) are contained within it.
@@ -30,11 +37,35 @@ The program also have a pytest routine [testing_electoral.py](https://github.com
 
 * We start with the definition of the function *max_key* which, given a dictionary as argument, returns a list of the keys with the highest value (for the purposes of this code this list will only contain one element).
 
-* Class *Montecarlo_electoral* begins with the definition of the constructor of our class that takes one default argument, i.e. the name of the electoral contest we are going to simulate and will come useful for the graphic part. Diferent variables of the class are defined. In particular we set the number of Deputies and the major and proportional coefficients as the italian ones, but they will change as soon as we import results from different source.
+* Class ***Montecarlo_electoral*** begins with the definition of the constructor of our class that takes one default argument, i.e. the name of the electoral contest we are going to simulate and will come useful for the graphic part. Diferent variables of the class are defined. In particular we set the number of Deputies and the major and proportional coefficients as the italian ones, but they will change as soon as we import results from different source.
 
 * **import_as_txt()** and **import_as_excel** provide that. Through these method we acquire the values for the main parameters we are interested at, i.e. the name of the parties and their Results in the elections (or in polls) respectively from a txt file or from an excel file. An example of how the files must be shaped is given in [Test](https://github.com/g95g95/Exam) in which a test.xls and test.txt files are present.
 Eventually we put together the parties' names and their results in a dictionary called **Results** and that will play a key role in the algorithm.
 
-* **check_input()** is an important method because it checks if the values we have imported are consistent. In particular errors will be raised if two or more parties share the same name, if 
+* **check_input()** is an important method because it checks if the values we have imported are consistent. In particular errors will be raised if two or more parties share the same name, if the some of the results is larger than 1, and if the sum of the proportional coefficients and the majoritary one is larger than one.
+
+* The **method fill_seats()** is actually the core of the program since the algorithm discussed above is within it. Starting from our **Results** vocabulary, at first we assign the seats corresponding to the proportional part and then we run a for cycle over all electoral collegia to assign the others, through the Montecarlo method I have explained above. Eventually this method returns a dictionary with the name of the parties as keys and the number of Seats achieved in a simulation.
+This method is checked in the pytest routine verifying its validity for every number of deputates and every combination of proportional and majoritary coefficients.
+
+* Since we are dealing with a stocastic processes, we want to eliminate aleatority and we can do that by performing many times (1000) Fill_Seats(). That is done through **complete_simulation()** which eventually returns a dictionary of the same shape of **fill_seats()** but this times the values of the Seats have been mediated and so we expect the result to be closer to the true Result.
+This method also fills the class parameter **allResults** which is a dictionary with keys displayed by the name of each party and values as a list of the different values the party has achieved 
+It was asked a 5% discrepancy between real and simulated data and the test with 2018 italian general elections was passed.
+
+* Let's now take a glance at the graphic part that is useful to graphically visualize our Results. It takes place through the method **graphic** that has 1 argument set an empty dictionary by default named "real" and an argument which will have to be the dictionary of our complete simulation. This method returns a histogram with just the simulated data if real is not given or with both simulated data and real data when real is provided.
+This method also draws a second histogram by exploiting the parameter **allResults** I have described above. So this second histogram will be a collection of the results for the different parties all over the simulations.
+This graph can actually be useful to evaluate the oscillations of the parties and to evaluate all possible oscillations duringa  general elections.
+This method ends with the histograms being saved in the folder [Graphics](https://github.com/g95g95/Exam)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
