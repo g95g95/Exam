@@ -24,7 +24,7 @@ The algorithm might also be used to highlight some shortcoming of the specific e
 
 # How to use the repository
 
-* First the user should open [Elections](https://github.com/g95g95/Exam) and modify one of the two files (an excel or a txt file) according to the elections he wants to simulate. One must fill each file with the results the Party/Coalition in recent polls of an upcoming election, pay attention at respecting the sintax of the files. Now they are set according to the * 2018 italian general election *.
+* First the user should open [Elections](https://github.com/g95g95/Exam) and modify one of the two files (an excel or a txt file) according to the elections he wants to simulate. One must fill each file with the results the Party/Coalition in recent polls of an upcoming election, pay attention at respecting the sintax of the files. Now they are set according to the *2018 italian general election*.
 
 * Once the user has filled the files with the proper parameters, the simulation is ready to be launched. That can be done by simply running [Main_electoral.py](https://github.com/g95g95/Exam) in a Python environment.
 
