@@ -45,8 +45,7 @@ The algorithm might also be used to highlight some shortcoming of the specific e
 
 * In the folder [GTphic](https://github.com/g95g95/Exam), the histograms of the method graphic are stored. They're probably the fanciest way to show this kind of results. Here below I show two examples of how the histograms look like are given (always for 2018 Italian General Elections).
 
-[Histogram-Confrontation_for_2018 Italian General elections.png](https://github.com/g95g95/Exam)asdadfgffsddsds
-
+[2018IGE1](https://github.com/g95g95/Exam/Graphic/Histogram-Confrontation_for_2018 Italian General elections.png)
 
 
 
