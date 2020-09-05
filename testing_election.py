@@ -44,13 +44,13 @@ def test_constructor_Montecarlo(): #testing for the proper initializion of the o
 	
 def test_import_as_txt(): #testing if the input files exist
 	m = Electoral_Montecarlo.Montecarlo_electoral()
-	m.import_as_txt('test.txt')
+	m.import_as_txt('Test/test.txt')
 	assert m.Results == Results2018 #Comparing the two alleged similar dictionaries
 
 
 def test_import_as_excel():
 	m = Electoral_Montecarlo.Montecarlo_electoral()
-	m.import_as_excel('Prova.xls')
+	m.import_as_excel('Test/test.xls')
 	assert m.Results == Results2018 
 	
 	
@@ -68,30 +68,30 @@ def test_check_import(): #Testing if the imported data can be used or not
 	with pytest.raises(ValueError):
 		m.check_import()
 	
-	m.import_as_txt('test.txt')
+	m.import_as_txt('Test/test.txt')
 	assert m.check_import() == True #We can see here that our check returns True when everyrhing is properly written
 	
 		
 		
 @given(x = st.integers())
-def test_Fill_Seats(x): #with this we prove that the algorithm is independent on the prop coefficients and on the majority coefficients
+def test_fill_feats(x): #with this we prove that the algorithm is independent on the prop coefficients and on the majority coefficients
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.Results = {'A':0.33,'B':0.15,'C':0.27,'D':0.25}
 	if (x>0 and x<10000000): #Of course I don't look for high values (Approximations could be a problem as we approach infinity. Besides it would make a no sense a Parliament made of 100000000 people)
 		m.Majorcoef = float(1/x)
 		m.Propcoef  = 1-float(1/x)
 		m.Ndeputies = x
-		assert sum(m.Fill_Seats().values()) <= m.Ndeputies
+		assert sum(m.fill_seats().values()) <= m.Ndeputies
 	
 
 
 
 #I have proven that it is ok for any results, for any number of total deputates and for the coefficients Major and Prop.
-def test_Complete_Simulation():
+def test_complete_simulation():
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.Results = Results2018
 
-	s         = m.Complete_Simulation()
+	s         = m.complete_simulation()
 	for i in s.keys():
 		assert  np.abs(s[i]-Seats2018[i])<12 #I want to proof that the function works because it converges to a value very close to the real one.
 		

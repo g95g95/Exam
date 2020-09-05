@@ -46,6 +46,7 @@ class Montecarlo_electoral:
 		Majorcoef: The value of the majoritary coefficient.
 		Propcoef:  The value of the proportional coefficient.
 		Election:  The name of the setted election.
+		allResults:A list of all the results of the simulation
 		"""		
 		self.Ndeputies           = 630 #Fixed on italian conditions
 		self.Propval 			 = []
@@ -54,8 +55,7 @@ class Montecarlo_electoral:
 		self.Propcoef            = 0.61 #Fixed on italian conditions
 		self.checkinput          = True #This will reveal wether we have an Input problem or not
 		self.election            = election
-
-
+		self.allResults          = {}
 	
 	
 	
@@ -75,12 +75,12 @@ class Montecarlo_electoral:
 		#initializing all the main parameters of the class
 		self.Parties   = list(xls.columns)
 		self.Propval   = list(float(xls[Party][0]) for Party in self.Parties)
-		self.Propcoef  = list([float(xls[Party][1]) for Party in self.Parties])[1]
-		self.Majorcoef = list([float(xls[Party][2]) for Party in self.Parties])[1]
-		self.Ndeputies = list([float(xls[Party][3]) for Party in self.Parties])[1]
+		self.Propcoef  = float([(xls[Party][1]) for Party in self.Parties][1])
+		self.Majorcoef = float([(xls[Party][2]) for Party in self.Parties][1])
+		self.Ndeputies = float([(xls[Party][3]) for Party in self.Parties][1])
 		self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
 
-	def import_as_text(self,filename):	
+	def import_as_txt(self,filename):	
 		"""
 	This is a method that allows to import the data we need from a txt file.
 	
@@ -95,7 +95,7 @@ class Montecarlo_electoral:
 			
 		#initializing all the main parameters of the class
 		self.Parties   = file[0].split('\t')
-		self.Propval   = (float(r) for r in file[1].split('\t'))
+		self.Propval   = [float(r) for r in file[1].split('\t')]
 		self.Propcoef  = float(file[2].split('\t')[1])
 		self.Majorcoef = float(file[3].split('\t')[1])
 		self.Ndeputies = float(file[4].split('\t')[1])
@@ -129,7 +129,7 @@ class Montecarlo_electoral:
 
 
 				   
-	def Fill_Seats(self,seed = 1): 
+	def fill_seats(self,seed = 1): 
 		"""
 		This method is the core of the program. It is used to fill the seats of our simulated Parliament.
 		
@@ -150,7 +150,7 @@ class Montecarlo_electoral:
 		
 		return seats
 	
-	def Complete_Simulation(self,N=1000):
+	def complete_simulation(self,N=1000):
 		"""
 		This function provides a valid extimation for the assigned number of seats by
 		averagiong over 1000 iterations of the simulation.
@@ -166,13 +166,12 @@ class Montecarlo_electoral:
 		None.
 
 		"""
-		self.allResults = {}
 		seats = {key:0 for key in list(self.Results)}
 		#this variables shall be used for the Graphic part.
-		self.allResults = {key:[self.Fill_Seats()[key] for i in range (N)] for key in list(self.Results.keys())}
+		self.allResults = {key:[self.fill_seats()[key] for i in range (N)] for key in list(self.Results.keys())}
 		for i in range(N):
 			
-			newseats = self.Fill_Seats()
+			newseats = self.fill_seats()
 			
 			for key in list(self.Results):
 				
@@ -184,9 +183,8 @@ class Montecarlo_electoral:
 
 
 	
-	def Graphics(self,final,real = {},nameofelections=''): 
+	def graphic(self,final,real = {},nameofelections=''): 
 		
-		#final   = self.Complete_Simulation() #Running the simulation
 		bins = np.linspace(0,self.Ndeputies,int(self.Ndeputies/2)) #Creating an adeguate linspace
 		
 		if len(real) == 0:
@@ -213,7 +211,7 @@ class Montecarlo_electoral:
 		plt.xlabel('Seats')
 		plt.legend(loc='upper right')
 		plt.title(self.election)
-		plt.savefig("Histogram-Confrontation_for_"+self.election+".png") #saving the histogram
+		plt.savefig("Graphi/cHistogram-Confrontation_for_"+self.election+".png") #saving the histogram
 		plt.close()
 	
 		for i in self.Parties:
@@ -224,11 +222,12 @@ class Montecarlo_electoral:
 
 		plt.xlabel('Seats')
 		plt.legend(loc='upper right')
-		plt.savefig("Numbers of possible results_for_"+self.election+'.png')
+		plt.savefig("Graphic/Numbers of possible results_for_"+self.election+'.png')
 		plt.close()
 
 
-
+a = Montecarlo_electoral()
+a.import_as_txt('Test/test.txt')
 
 
 
