@@ -24,39 +24,26 @@ The algorithm might also be used to highlight some shortcoming of the specific e
 
 # How to use the repository
 
-* First the user should open [Elections](https://github.com/g95g95/Exam) and modify one of the two files (an excel or a txt file) according to the elections he want to simulate. One must fill each file with the results the Party/Coalition achieved in a past election or according to polls of an upcoming election, pay attention at respecting the sintax of the files. Now they are set according to the *2018 italian general election*
+* First the user should open [Elections](https://github.com/g95g95/Exam) and modify one of the two files (an excel or a txt file) according to the elections he wants to simulate. One must fill each file with the results the Party/Coalition in recent polls of an upcoming election, pay attention at respecting the sintax of the files. Now they are set according to the * 2018 italian general election *.
 
 * Once the user has filled the files with the proper parameters, the simulation is ready to be launched. That can be done by simply running [Main_electoral.py](https://github.com/g95g95/Exam) in a Python environment.
 
-* The results of the simulation will be stored in a txt file contained in [Results](https://github.com/g95g95/Exam). Histograms of the seats and of the values the coalition/Party reached all over the iterations of the simulation will be stored in [Graphic](https://github.com/g95g95/Exam)
+* The results of the simulation will be stored in a txt file contained in [Results](https://github.com/g95g95/Exam). Histograms of the seats and of the values the coalition/Party reached all over the iterations of the simulation will be stored in [Graphic](https://github.com/g95g95/Exam).
 
 
 # Structure of the Repository
 
-In the file [Electoral_Montecarlo.py](https://github.com/g95g95/Exam) a class *Montecarlo_electoral is defined*. All the methods that will be used in [Main_electoral.py](https://github.com/g95g95/Exam) are contained within it.
+* In the file [Electoral_Montecarlo.py](https://github.com/g95g95/Exam) a class *Montecarlo_electoral* is defined. All the methods that will be used in [Main_electoral.py](https://github.com/g95g95/Exam) are contained within it. The results of the simulation will be stored in the form of dictionaries. The methods also include a graphic method that will provide two histograms build upon such forementioned dictionaries.
 
-The program also have a pytest routine [testing_electoral.py](https://github.com/g95g95/Exam) where all the methods are tested.
+* The program also has a pytest routine [testing_electoral.py](https://github.com/g95g95/Exam) where all the methods are tested, mainly using **assert**-like tests.
 
-* We start with the definition of the function *max_key* which, given a dictionary as argument, returns a list of the keys with the highest value (for the purposes of this code this list will only contain one element).
+* In the folder [Results](https://github.com/g95g95/Exam), as the name suggests, the results of the simulation are stored. It is a *txt* file with the seats assigned to each party/Coalition according to the simulation.
 
-* Class ***Montecarlo_electoral*** begins with the definition of the constructor of our class that takes one default argument, i.e. the name of the electoral contest we are going to simulate and will come useful for the graphic part. Diferent variables of the class are defined. In particular we set the number of Deputies and the major and proportional coefficients as the italian ones, but they will change as soon as we import results from different source.
+* In the folder [Test](https://github.com/g95g95/Exam) there are two "test" files (*.txt* and *.xls* respectively) to test the efficiency of data acquiring in the pytest routine. Both files are presetted on 2018 Italian General Elections.
 
-* **import_as_txt()** and **import_as_excel** provide that. Through these method we acquire the values for the main parameters we are interested at, i.e. the name of the parties and their Results in the elections (or in polls) respectively from a txt file or from an excel file. An example of how the files must be shaped is given in [Test](https://github.com/g95g95/Exam) in which a test.xls and test.txt files are present.
-Eventually we put together the parties' names and their results in a dictionary called **Results** and that will play a key role in the algorithm.
+* [Main_electoral.py](https://github.com/g95g95/Exam) is the main of my program. At first it creates an object of the class *Montecarlo_electoral* through the constructor of the class. Then a method to fill the parameter we need for the simulation is executed. A method *check_import* is also called soon after. If the data we acquired are not consistent, i.e. two parties/coalitions with the same name, the sum of the proportional results larger than 1, the sum of the proportional and majoritary coefficient larger than 1, then ValueErrors will be raised.Then the method *Complete_Simulation* is executed and its results stored in [Results](https://github.com/g95g95/Exam) as mentioned above. Eventually we call for the execution of the graphic method *graphic* which takes a default argument, beside the result of our simulation, namely the assigned seats during a real election that can be used to make graphical comparison with our simulated seats. The main then ends with histograms being saved in the folder [Graphics](https://github.com/g95g95/Exam).
 
-* **check_input()** is an important method because it checks if the values we have imported are consistent. In particular errors will be raised if two or more parties share the same name, if the some of the results is larger than 1, and if the sum of the proportional coefficients and the majoritary one is larger than one.
-
-* The **method fill_seats()** is actually the core of the program since the algorithm discussed above is within it. Starting from our **Results** vocabulary, at first we assign the seats corresponding to the proportional part and then we run a for cycle over all electoral collegia to assign the others, through the Montecarlo method I have explained above. Eventually this method returns a dictionary with the name of the parties as keys and the number of Seats achieved in a simulation.
-This method is checked in the pytest routine verifying its validity for every number of deputates and every combination of proportional and majoritary coefficients.
-
-* Since we are dealing with a stocastic processes, we want to eliminate aleatority and we can do that by performing many times (1000) Fill_Seats(). That is done through **complete_simulation()** which eventually returns a dictionary of the same shape of **fill_seats()** but this times the values of the Seats have been mediated and so we expect the result to be closer to the true Result.
-This method also fills the class parameter **allResults** which is a dictionary with keys displayed by the name of each party and values as a list of the different values the party has achieved 
-It was asked a 5% discrepancy between real and simulated data and the test with 2018 italian general elections was passed.
-
-* Let's now take a glance at the graphic part that is useful to graphically visualize our Results. It takes place through the method **graphic** that has 1 argument set an empty dictionary by default named "real" and an argument which will have to be the dictionary of our complete simulation. This method returns a histogram with just the simulated data if real is not given or with both simulated data and real data when real is provided.
-This method also draws a second histogram by exploiting the parameter **allResults** I have described above. So this second histogram will be a collection of the results for the different parties all over the simulations.
-This graph can actually be useful to evaluate the oscillations of the parties and to evaluate all possible oscillations duringa  general elections.
-This method ends with the histograms being saved in the folder [Graphics](https://github.com/g95g95/Exam)
+* In the folder Graphic, the histograms of the method graphic are stored. They're probably the fanciest way to show this kind of results. Here below I show two examples of how the histograms look like are given (always for 2018 Italian General Elections).
 
 
 
