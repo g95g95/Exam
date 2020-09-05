@@ -60,7 +60,7 @@ class Montecarlo_electoral:
 	
 	
 	
-	def import_as_excel(self,filename):		
+	def import_as_excel(self,filename = 'Elections/Election.xls'):		
 		"""
 	This is a method that allows to import the data we need from an excel file.
 	
@@ -73,14 +73,21 @@ class Montecarlo_electoral:
 		xls            = pd.read_excel(filename) #opening of the excel files as a Dataframe
 
 		#initializing all the main parameters of the class
+		
+		
+		
 		self.Parties   = list(xls.columns)
 		self.Propval   = list(float(xls[Party][0]) for Party in self.Parties)
 		self.Propcoef  = float([(xls[Party][1]) for Party in self.Parties][1])
 		self.Majorcoef = float([(xls[Party][2]) for Party in self.Parties][1])
 		self.Ndeputies = float([(xls[Party][3]) for Party in self.Parties][1])
+		self.election  = str([(xls[Party][4]) for Party in self.Parties][1])
 		self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
 
-	def import_as_txt(self,filename):	
+		
+		
+		
+	def import_as_txt(self,filename = 'Elections/Election.txt'):	
 		"""
 	This is a method that allows to import the data we need from a txt file.
 	
@@ -90,15 +97,14 @@ class Montecarlo_electoral:
 		"""		
 
 		
-			
 		file           = [line.strip() for line in open(filename)] #opening of the file 
-			
 		#initializing all the main parameters of the class
-		self.Parties   = file[0].split('\t')
-		self.Propval   = [float(r) for r in file[1].split('\t')]
-		self.Propcoef  = float(file[2].split('\t')[1])
-		self.Majorcoef = float(file[3].split('\t')[1])
-		self.Ndeputies = float(file[4].split('\t')[1])
+		self.election  = file[0]
+		self.Parties   = file[1].split('\t')
+		self.Propval   = [float(r) for r in file[2].split('\t')]
+		self.Propcoef  = float(file[3].split('\t')[1])
+		self.Majorcoef = float(file[4].split('\t')[1])
+		self.Ndeputies = float(file[5].split('\t')[1])
 		self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])	
 
 
@@ -168,10 +174,10 @@ class Montecarlo_electoral:
 		"""
 		seats = {key:0 for key in list(self.Results)}
 		#this variables shall be used for the Graphic part.
-		self.allResults = {key:[self.fill_seats()[key] for i in range (N)] for key in list(self.Results.keys())}
+		self.allResults = {key:[self.fill_seats(i)[key] for i in range (N)] for key in list(self.Results.keys())}
 		for i in range(N):
 			
-			newseats = self.fill_seats()
+			newseats = self.fill_seats(i)
 			
 			for key in list(self.Results):
 				
@@ -232,7 +238,7 @@ class Montecarlo_electoral:
 		plt.xlabel('Seats')
 		plt.legend(loc='upper right')
 		plt.title(self.election)
-		plt.savefig("Graphi/cHistogram-Confrontation_for_"+self.election+".png") #saving the histogram
+		plt.savefig("Graphic/Histogram-Confrontation_for_"+self.election+".png") #saving the histogram
 		plt.close()
 	
 		for i in self.Parties:
@@ -247,8 +253,7 @@ class Montecarlo_electoral:
 		plt.close()
 
 
-a = Montecarlo_electoral()
-a.import_as_txt('Test/test.txt')
+
 
 
 
