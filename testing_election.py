@@ -11,81 +11,67 @@ import Electoral_Montecarlo
 from hypothesis import given
 import hypothesis.strategies as st
 
+Results2018={'M5S':0.327,'Centrodestra':0.375,'Centrosinistra':0.22,'LeU':0.03}
+#ResultsHyp ={'Movimento 5 stelle':0.18,'Centrosinistra':0.20,'Lega':0.35,'Centrodestra':0.15}
+Seats2018  ={'M5S':221,'Centrosinistra':113,'Centrodestra':260,'LeU':14} #excluding abroad seats
+
+
+
+
+
 
 def test_max_key(): #key with the max value in a dictionary
-	examples = dict([('A',400),('B',200),('C',400),('D',300)])
-	mk       = Electoral_Montecarlo.max_key(examples) 
-	assert (mk == ['A','C']) #the function returns a list of this two elements.
-
-Results2018={'Movimento 5 stelle':0.327,'Centrosinistra':0.22,'Centrodestra':0.37,'Leu':0.03}
-#ResultsHyp ={'Movimento 5 stelle':0.18,'Centrosinistra':0.20,'Lega':0.35,'Centrodestra':0.15}
-Seats2018  ={'Movimento 5 stelle':221,'Centrosinistra':113,'Centrodestra':260,'Leu':14} #excluding abroad seats
+	examples1 = dict([('A',400),('B',200),('C',400),('D',300)])
+	examples2 = dict([('A',''),('B',''),('C',''),('D','')])
+	mk1       = Electoral_Montecarlo.max_key(examples1)
+	assert (mk1 == ['A','C']) #the function returns a list of these two elements.
+	#with pytest.raises(ValueError):
+	#	mk2       = Electoral_Montecarlo.max_key(examples2)
+		
+		
+		
+		
 
 
 
 
 
 def test_constructor_Montecarlo(): #testing for the proper initializion of the object of the class.
-	with pytest.raises(ValueError):
-		m = Electoral_Montecarlo.Montecarlo_electoral(chooseinput = 'not the right input')
-	
-	
-	
-	
-def test_Import_Result(): #testing if the input files exist
-	m = Electoral_Montecarlo.Montecarlo_electoral('txt','Not an existing file')
-	with pytest.raises(FileNotFoundError):
-		m.Import_Results()
-		
-	m = Electoral_Montecarlo.Montecarlo_electoral('excel','Not existing file')
-	with pytest.raises(FileNotFoundError):
-		m.Import_Results()
-	
-	
-	
-def test_check_input(): #Testing if the imported data can be used or not
 	m = Electoral_Montecarlo.Montecarlo_electoral()
-	m.Parties = rd.choice([['',''],[]]) #Parties were notproperly harvested
-	with pytest.raises(ValueError):
-		m.check_input()
+	assert m.election == 'Italian_2018_General_Election'
 	
+	
+	
+	
+def test_import_as_txt(): #testing if the input files exist
+	m = Electoral_Montecarlo.Montecarlo_electoral()
+	m.import_as_txt('test.txt')
+	assert m.Results == Results2018 #Comparing the two alleged similar dictionaries
+
+
+def test_import_as_excel():
+	m = Electoral_Montecarlo.Montecarlo_electoral()
+	m.import_as_excel('Prova.xls')
+	assert m.Results == Results2018 
+	
+	
+	
+def test_check_import(): #Testing if the imported data can be used or not
+	m = Electoral_Montecarlo.Montecarlo_electoral()
+
 	m.Parties = ['Pd','Pd','Lega','FDI'] #Two parties with the same name, impossible
-	with pytest.raises(ValueError):
-		m.check_input()
 	
-	m.Propval = rd.choice([['',''],[]])#Results were not properly harvested
 	with pytest.raises(ValueError):
-		m.check_input()
-		
-	m.Propval = [1,0.3,0.3] #Results are not consistent
-	with pytest.raises(ValueError):
-		m.check_input()
-		
+		m.check_import()
+
+
 	m.Propval = [0.2,0.3,0.5,0.1] #Results are not consistent
 	with pytest.raises(ValueError):
-		m.check_input()
+		m.check_import()
 	
+	m.import_as_txt('test.txt')
+	assert m.check_import() == True #We can see here that our check returns True when everyrhing is properly written
 	
-	m.Propcoef	= rd.choice(['','alpha','01']) #Coefficients cannot be properly interpreted
-	with pytest.raises(ValueError):
-		m.check_input()
-		
-	m.Majorcoef	= rd.choice(['','alpha','01'])
-	with pytest.raises(ValueError):
-		m.check_input()	
-		
-	m.Propcoef  = 1.5 #Coefficients are not consistent
-	with pytest.raises(ValueError):
-		m.check_input()
-	
-	m.Majorcoef = 1.5	
-	with pytest.raises(ValueError):
-		m.check_input()
-		
-	m.Propcoef,m.Majorcoef = 0.6,0.5
-	with pytest.raises(ValueError):
-		m.check_input()
-		
 		
 		
 @given(x = st.integers())
@@ -111,17 +97,7 @@ def test_Complete_Simulation():
 		assert  np.abs(s[i]-Seats2018[i])<12 #I want to proof that the function works because it converges to a value very close to the real one.
 		
 	
-	
-	
-def test_Graphics():
-	m = Electoral_Montecarlo.Montecarlo_electoral()
-	m.Results = {'A':0.33,'B':0.15,'C':0.27,'D':0.25}
-	with pytest.raises(ValueError):
-		m.Graphics({'t':0.33,'e':0.15,'s':0.27,'t':0.25}) #they have not the same names
-		m.Graphics({'t':0.33})	#they have not the same number of elements!
-		
-	
-	
+
 	
 	
 	
