@@ -183,7 +183,28 @@ class Montecarlo_electoral:
 
 
 	
-	def graphic(self,final,real = {},nameofelections=''): 
+	def graphic(self,final,real = {}): 
+		"""
+		graphic is a method which returns and saves two graphs, a histogram in which 
+		the data of our complete_simulation will be shown and  another where all the
+		data coming from all the iterations of the simulation are displayed
+
+		Parameters
+		----------
+		final : It is a dictionary shaped according to complete_simulation()
+		real : It is a dictionary containing the true results of the elecion we are simulating
+
+
+		Raises
+		------
+		ValueError:
+			if real and final have two different lenghts
+			if the keys of real and those of final are different
+
+
+		"""
+		
+		
 		
 		bins = np.linspace(0,self.Ndeputies,int(self.Ndeputies/2)) #Creating an adeguate linspace
 		
