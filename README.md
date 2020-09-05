@@ -24,14 +24,11 @@ The algorithm might also be used to highlight some shortcoming of the specific e
 
 # How to use the repository
 
-* The procedure we follow to execute the program is rather simple. in [Main_electoral.py](https://github.com/g95g95/Exam) we initialize an object of the class Montecarlo_electoral.
+* First the user should open [Elections](https://github.com/g95g95/Exam) and modify one of the two files (an excel or a txt file) according to the elections he want to simulate. One must fill each file with the results the Party/Coalition achieved in a past election or according to polls of an upcoming election, pay attention at respecting the sintax of the files. Now they are set according to the *2018 italian general election*
 
-* Then we harvest the data we need through the methods **import_as_excel()** and **import_as_txt()** depending on which kind of document we want to open. Within the brakets we must insert the name of the file we want open. Both xls and txt files need to be shaped according to the ones present in [Test](https://github.com/g95g95/Exam/).
-Eventually the method **check_input** will point out any consistency error.
+* Once the user has filled the files with the proper parameters, the simulation is ready to be launched. That can be done by simply running [Main_electoral.py](https://github.com/g95g95/Exam) in a Python environment.
 
-* Then we call for the execution of the method **complete_simulation** and we write the results of our simulated election in a txt files named accordingly in the folder [Results](https://github.com/g95g95/Exam).
-
-* If we want to display the results in a graphic form we can call the method **graphic**. If we want to compare the assigned of the simulated elections with a real one this method must take a dictionary having the informations about the elections as an argument.
+* The results of the simulation will be stored in a txt file contained in [Results](https://github.com/g95g95/Exam). Histograms of the seats and of the values the coalition/Party reached all over the iterations of the simulation will be stored in [Graphic](https://github.com/g95g95/Exam)
 
 
 # Structure of the Repository
