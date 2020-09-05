@@ -30,7 +30,11 @@ The program also have a pytest routine [testing_electoral.py](https://github.com
 
 * We start with the definition of the function *max_key* which, given a dictionary as argument, returns a list of the keys with the highest value (for the purposes of this code this list will only contain one element).
 
-* Class *Montecarlo_electoral* begins with the definition of the constructor of our class that takes one default argument, i.e. the name of the electoral contest we are going to simulate and will come useful for the graphic part.
- 
-Different 
+* Class *Montecarlo_electoral* begins with the definition of the constructor of our class that takes one default argument, i.e. the name of the electoral contest we are going to simulate and will come useful for the graphic part. Diferent variables of the class are defined. In particular we set the number of Deputies and the major and proportional coefficients as the italian ones, but they will change as soon as we import results from different source.
+
+* **import_as_txt()** and **import_as_excel** provide that. Through these method we acquire the values for the main parameters we are interested at, i.e. the name of the parties and their Results in the elections (or in polls) respectively from a txt file or from an excel file. An example of how the files must be shaped is given in [Test](https://github.com/g95g95/Exam) in which a test.xls and test.txt files are present.
+Eventually we put together the parties' names and their results in a dictionary called **Results** and that will play a key role in the algorithm.
+
+* **check_input()** is an important method because it checks if the values we have imported are consistent. In particular errors will be raised if two or more parties share the same name, if 
+
 
