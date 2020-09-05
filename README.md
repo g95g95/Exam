@@ -24,5 +24,13 @@ The algorithm might also be used to highlight some shortcoming of the specific e
 
 # Structure of the Repository
 
-In the file [Electoral_Montecarlo.py](https://github.com/g95g95/Exam)
+In the file [Electoral_Montecarlo.py](https://github.com/g95g95/Exam) a class *Montecarlo_electoral is defined*. All the methods that will be used in [Main_electoral.py](https://github.com/g95g95/Exam) are contained within it.
+
+The program also have a pytest routine [testing_electoral.py](https://github.com/g95g95/Exam) where all the methods are tested.
+
+* We start with the definition of the function *max_key* which, given a dictionary as argument, returns a list of the keys with the highest value (for the purposes of this code this list will only contain one element).
+
+* Class *Montecarlo_electoral* begins with the definition of the constructor of our class that takes one default argument, i.e. the name of the electoral contest we are going to simulate and will come useful for the graphic part.
+ 
+Different 
 
