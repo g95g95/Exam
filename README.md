@@ -22,11 +22,16 @@ Actually if we run very long simulations (milions and milions of iterations) a s
 The algorithm might also be used to highlight some shortcoming of the specific electoral law we're dealing with. It migh happen (even if it sounds absurd) that two parties obtainin almost the same results on national scale will have a completely different assignment of seats and this algorithm can see to that
 
 
-# How to utilize the program
+# How to use the repository
 
 * The procedure we follow to execute the program is rather simple. in [Main_electoral.py](https://github.com/g95g95/Exam) we initialize an object of the class Montecarlo_electoral.
 
-* Then we harvest the data we need through the methods **import_as_excel** and **import_as_txt** 
+* Then we harvest the data we need through the methods **import_as_excel()** and **import_as_txt()** depending on which kind of document we want to open. Within the brakets we must insert the name of the file we want open. Both xls and txt files need to be shaped according to the ones present in [Test](https://github.com/g95g95/Exam/).
+Eventually the method **check_input** will point out any consistency error.
+
+* Then we call for the execution of the method **complete_simulation** and we write the results of our simulated election in a txt files named accordingly in the folder [Results](https://github.com/g95g95/Exam).
+
+* If we want to display the results in a graphic form we can call the method **graphic**. If we want to compare the assigned of the simulated elections with a real one this method must take a dictionary having the informations about the elections as an argument.
 
 
 # Structure of the Repository
