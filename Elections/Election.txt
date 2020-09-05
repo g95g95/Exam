@@ -1,0 +1,6 @@
+2018 Italian General elections
+M5S	Cdx	Csx	LeU
+0.327	0.375	0.22	0.03
+Prop	0.61
+Maj	0.37
+Dep.	630
