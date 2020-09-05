@@ -12,7 +12,6 @@ from hypothesis import given
 import hypothesis.strategies as st
 
 Results2018={'M5S':0.327,'Centrodestra':0.375,'Centrosinistra':0.22,'LeU':0.03}
-#ResultsHyp ={'Movimento 5 stelle':0.18,'Centrosinistra':0.20,'Lega':0.35,'Centrodestra':0.15}
 Seats2018  ={'M5S':221,'Centrosinistra':113,'Centrodestra':260,'LeU':14} #excluding abroad seats
 
 
