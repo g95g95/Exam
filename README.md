@@ -24,11 +24,11 @@ The algorithm might also be used to highlight some shortcoming of the specific e
 
 # How to use the repository
 
-* First the user should open [Elections](https://github.com/g95g95/Exam) and modify one of the two files (an excel or a txt file) according to the elections he wants to simulate. One must fill each file with the results the Party/Coalition in recent polls of an upcoming election, pay attention at respecting the sintax of the files. Now they are set according to the *2018 italian general election*.
+* First the user should open [Elections](https://github.com/g95g95/Exam) and modify one of the two files (an excel or a txt file) according to the elections he wants to simulate. One must fill each file with the results of the Parties/Coalitions in recent polls of an upcoming election or with results coming from past elections, pay attention at respecting the sintax of the files. Now they are set according to the *2018 italian general election*. In the folder [Elections](https://github.com/g95g95/Exam) there is also another a txt file named *Real_Election_For_Confrontation*: it is currently setted according to *2018 Italian General elections*. If one aims to make a graphical comparison between the seats assigned during a past election and the ones assigned by a simulation will have to compile this file accordingly, carefully respecting its syntax. Conversely, if we are simulating an upcoming election, this file needs to stay empty and has to be cleant.
 
 * Once the user has filled the files with the proper parameters, the simulation is ready to be launched. That can be done by simply running [Main_electoral.py](https://github.com/g95g95/Exam) in a Python environment.
 
-* The results of the simulation will be stored in a txt file contained in [Results](https://github.com/g95g95/Exam). Histograms of the seats and of the values the coalition/Party reached all over the iterations of the simulation will be stored in [Graphic](https://github.com/g95g95/Exam).
+* The results of the simulation will be stored in a txt file contained in [Results](https://github.com/g95g95/Exam). Histograms concerning the values of the assigned seats reached all over the iterations of the simulation will be stored in [Graphic](https://github.com/g95g95/Exam).
 
 
 # Structure of the Repository
