@@ -15,21 +15,28 @@ import matplotlib.pylab as plt
 
 
 def max_key(d):
-    """
+	"""
 	This function operates with dictionaries.
-	       
-    Parameters
+
+	Parameters
 	-------
 	d : a generic dictionary with numeric values.
-    
-    Returns
+
+	Returns
 	-------
 	A list containing the keys with the highest values.
 
 	"""
-    max_val = max(list(d.values()))
-    max_keys = [i for i in list(d.keys()) if d[i] == max_val] #the list of the keys having the highest value of d
-    return (max_keys) #For our purposes it will be a list of just one element
+	if len(d) == 0:
+		raise ValueError ('The vocabulary you gave me is empty')
+		return 0
+	
+	max_val = max(list(d.values()))
+	#the list of the keys having the highest value of d
+	max_keys = [i for i in list(d.keys()) if d[i] == max_val]
+
+	return (max_keys)
+
 	
 
 class Montecarlo_electoral:
@@ -56,13 +63,14 @@ class Montecarlo_electoral:
 		-------
 		None
 		
-		"""		
-		self.Ndeputies           = 630 #Fixed on italian conditions
+		"""	
+		#All parameters fixed on italian conditions
+		self.Ndeputies           = 630 
 		self.Propval 			 = []
 		self.Parties             = []
-		self.Majorcoef           = 0.37 #Fixed on italian conditions
-		self.Propcoef            = 0.61 #Fixed on italian conditions
-		self.checkinput          = True #This will reveal wether we have an Input problem or not
+		self.Majorcoef           = 0.37 
+		self.Propcoef            = 0.61 
+		self.checkinput          = True 
 		self.election            = election
 		self.allResults          = {}
 	
@@ -82,13 +90,10 @@ class Montecarlo_electoral:
 		None
 		"""
 			
-			
-		xls            = pd.read_excel(filename) #opening of the excel files as a Dataframe
+		#opening of the excel files as a Dataframe	
+		xls            = pd.read_excel(filename) 
 
 		#initializing all the main parameters of the class
-		
-		
-		
 		self.Parties   = list(xls.columns)
 		self.Propval   = list(float(xls[Party][0]) for Party in self.Parties)
 		self.Propcoef  = float([(xls[Party][1]) for Party in self.Parties][1])
@@ -114,8 +119,9 @@ class Montecarlo_electoral:
 		None
 		"""		
 
+		#opening of the file 
+		file           = [line.strip() for line in open(filename)] 
 		
-		file           = [line.strip() for line in open(filename)] #opening of the file 
 		#initializing all the main parameters of the class
 		self.election  = file[0]
 		self.Parties   = file[1].split('\t')
@@ -168,15 +174,17 @@ class Montecarlo_electoral:
 		-------
 		A dictionary in which each Party has its simulated number of seats.
 		"""
-		np.random.seed(seed) #we are setting the seed
+		#we are setting the seed
+		np.random.seed(seed)
 		seats = {key:int(self.Results[key]*self.Ndeputies*self.Propcoef)+int(self.Results[key]*(1-sum(list(self.Results.values())))) for key in list(self.Results.keys())}
 		
 		for i in range (int(self.Ndeputies*self.Majorcoef)):
 			
 			Resultscopy = self.Results.copy()
-			Resultscopy = {key:self.Results[key]*np.random.rand() for key in self.Results.keys()}#this is the core of the program
-			
-			seats[rd.choice(max_key(Resultscopy))]+=1 #The Party whit the highest value is winning the seat
+			#this is the core of the program
+			Resultscopy = {key:self.Results[key]*np.random.rand() for key in self.Results.keys()}
+			#The Party whit the highest value is winning the seat
+			seats[rd.choice(max_key(Resultscopy))]+=1 
 		
 		return seats
 	
@@ -196,6 +204,7 @@ class Montecarlo_electoral:
 
 		"""
 		seats = {key:0 for key in list(self.Results)}
+		
 		#this variables shall be used for the Graphic part.
 		self.allResults = {key:[self.fill_seats(i)[key] for i in range (N)] for key in list(self.Results.keys())}
 		for i in range(N):
@@ -235,8 +244,9 @@ class Montecarlo_electoral:
 		None"""
 		
 		
-		
-		bins 		= np.linspace(0,self.Ndeputies,int(self.Ndeputies/2)) #Creating an adeguate linspace
+		#Creating an adeguate linspace
+		bins 		= np.linspace(0,self.Ndeputies,int(self.Ndeputies/2))
+		#opening the real assigned seats file 
 		real 		= [line.strip() for line in open('Elections/Real_Election_for_Confrontation.txt')]
 		print(len(real))
 		
@@ -245,7 +255,8 @@ class Montecarlo_electoral:
 			
 			
 			for i in self.Parties:
-				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim') #Creating the single histogram
+				#Creating the single histogram
+				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim') 
 		
 		
 		
@@ -263,23 +274,27 @@ class Montecarlo_electoral:
 			
 			for i in self.Parties:
 				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim')
-				plt.hist(real[i],bins,alpha = 0.5,label = i + 'real') #creating an histogram with both real and results data displayed
+				#creating an histogram with both real and results data displayed
+				plt.hist(real[i],bins,alpha = 0.5,label = i + 'real') 
 			
 			
 		plt.xlabel('Seats')
 		plt.legend(loc='upper right')
 		plt.title(self.election)
-		plt.savefig("Graphic/Histogram-Confrontation_for_"+self.election+".png") #saving the histogram
+		#saving the histogram
+		plt.savefig("Graphic/Histogram-Confrontation_for_"+self.election+".png") 
 		plt.close()
 	
 		for i in self.Parties:
 			if self.Results[i]<0.05:
 				continue
-			plt.hist(self.allResults[i],bins,alpha = 0.5,label = i) #Plotting the histogram with all possible results throughout the simulation.
+			#Plotting the histogram with all possible results throughout the simulation.
+			plt.hist(self.allResults[i],bins,alpha = 0.5,label = i) 
 			
 
 		plt.xlabel('Seats')
 		plt.legend(loc='upper right')
+		#Saving the histogram
 		plt.savefig("Graphic/Numbers of possible results_for_"+self.election+'.png')
 		plt.close()
 

@@ -31,12 +31,11 @@ def test_max_key():
 	None.
 
 	"""
-	examples1 = dict([('A',400),('B',200),('C',400),('D',300)])
-	examples2 = dict([('A',''),('B',''),('C',''),('D','')])
+	examples1 = {'A':400,'B':200,'C':400,'D':300}
 	mk1       = Electoral_Montecarlo.max_key(examples1)
 	assert (mk1 == ['A','C']) #the function returns a list of these two elements.
-	#with pytest.raises(ValueError):
-	#	mk2       = Electoral_Montecarlo.max_key(examples2)
+	with pytest.raises(ValueError):
+		mk2       = Electoral_Montecarlo.max_key({})
 		
 		
 		
@@ -54,7 +53,8 @@ def test_constructor_Montecarlo():
 	
 	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
-	assert m.election == 'Italian_2018_General_Election' #testing the proper initializion of the default parameter.
+	#testing the proper initializion of the default parameter.
+	assert m.election == 'Italian_2018_General_Election'
 	assert m.Propcoef ==  0.61
 	assert m.Majorcoef==  0.37
 	assert m.Ndeputies==  630
@@ -75,7 +75,8 @@ def test_import_as_txt():
 	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.import_as_txt('Test/test.txt')
-	assert m.Results == Results2018 #Comparing the two alleged similar dictionaries
+	#Comparing the two alleged similar dictionaries
+	assert m.Results == Results2018 
 
 
 def test_import_as_excel():
@@ -91,6 +92,7 @@ def test_import_as_excel():
 	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.import_as_excel('Test/test.xls')
+	#Comparing the two alleged similar dictionaries
 	assert m.Results == Results2018 
 	
 	
@@ -108,29 +110,30 @@ def test_check_import():
 	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 
-	m.Parties = ['Pd','Pd','Lega','FDI'] #Two parties with the same name, impossible
-	
+	m.Parties = ['Pd','Pd','Lega','FDI']
+	#Results are not consistent: two parties with the same name, impossible
 	with pytest.raises(ValueError):
 		m.check_import()
 
-
-	m.Propval = [0.2,0.3,0.5,0.1] #Results are not consistent
+	#Results are not consistent: The sum is larger than 1
+	m.Propval = [0.2,0.3,0.5,0.1] 
 	with pytest.raises(ValueError):
 		m.check_import()
 	
+	#Results are not consistent: The coefficients'sum is larger than 1
 	m.Propcoef,m.Majorcoef = [0.5,0.6]
 	with pytest.raises(ValueError):
 		m.check_import()
 	
 	
 	m.import_as_txt('Test/test.txt')
-	assert m.check_import() == True #We can see here that our check returns True when everyrhing is properly written
-	
+	#We can see here that our check returns True when everyrhing is properly written
+	assert m.check_import() == True 
 		
 		
 @given(x = st.integers())
 @settings(max_examples=20)
-def test_fill_feats(x): #with this we prove that the algorithm is independent on the prop coefficients and on the majority coefficients
+def test_fill_feats(x):
 	"""
 	
 	This test verifies that the algorithm of fill_seats() is independent on the
