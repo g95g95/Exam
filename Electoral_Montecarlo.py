@@ -15,20 +15,22 @@ import matplotlib.pylab as plt
 
 
 def max_key(d):
-    """This method generates a random spin configuration for the initial condition.
-       
+    """
+	This function operates with dictionaries.
+	       
     Parameters
-        d : a generic dictionary with numeric values.
+	-------
+	d : a generic dictionary with numeric values.
     
-    Returns:
-        A list containing the keys with the highest values.
-        
-    Raise:
-        ValueError if values are not numbers."""
+    Returns
+	-------
+	A list containing the keys with the highest values.
+
+	"""
     max_val = max(list(d.values()))
     max_keys = [i for i in list(d.keys()) if d[i] == max_val] #the list of the keys having the highest value of d
     return (max_keys) #For our purposes it will be a list of just one element
-
+	
 
 class Montecarlo_electoral:
 	 
@@ -36,9 +38,11 @@ class Montecarlo_electoral:
 	
 	def __init__ (self,election = 'Italian_2018_General_Election'):	
 		""" 
-    This is a class for mathematical operations on complex numbers. 
-      
-    Attributes: 
+		
+		This is the Constructor of the class Montecarlo_electoral
+		    
+	    Attributes
+		-------
         Ndeputies: The number of deputies elected during our election.
         Results:   It is an empty dictionary that will be filled with the results of our simulation.
 		Propval:   The %results of the setted election.
@@ -47,6 +51,11 @@ class Montecarlo_electoral:
 		Propcoef:  The value of the proportional coefficient.
 		Election:  The name of the setted election.
 		allResults:A list of all the results of the simulation
+		
+		Returns
+		-------
+		None
+		
 		"""		
 		self.Ndeputies           = 630 #Fixed on italian conditions
 		self.Propval 			 = []
@@ -62,11 +71,15 @@ class Montecarlo_electoral:
 	
 	def import_as_excel(self,filename = 'Elections/Election.xls'):		
 		"""
-	This is a method that allows to import the data we need from an excel file.
+		This is a method that allows to import the data we need from an excel file.
 	
-	Parameters
-	
+		Parameters
+		-------
 		filename  :  It is simply the name of the file
+		
+		Returns
+		-------
+		None
 		"""
 			
 			
@@ -89,11 +102,16 @@ class Montecarlo_electoral:
 		
 	def import_as_txt(self,filename = 'Elections/Election.txt'):	
 		"""
-	This is a method that allows to import the data we need from a txt file.
+		This is a method that allows to import the data we need from a txt file.
 	
-	Parameters
-	
+		Parameters
+		-------
 		filename  :  It is simply the name of the file
+		
+		
+		Returns
+		-------
+		None
 		"""		
 
 		
@@ -112,7 +130,10 @@ class Montecarlo_electoral:
 		"""
 		This method checks if the imported data makes sense.
 		
-		Returns: True if everything okay, False is illogic data are imported.
+		Returns
+		-------
+		True:  if everything is okay
+		False: if illogic data are imported.
 
 		"""		
 		for i in self.Parties:	
@@ -139,10 +160,13 @@ class Montecarlo_electoral:
 		"""
 		This method is the core of the program. It is used to fill the seats of our simulated Parliament.
 		
-		Arguments:
+		Arguments
+		-------
 		seed:    It is the seed to give as an argument to the random number, to reproduce the simulation.
 		
-		Returns: a dictionary in which each Party has its simulated number of seats.
+		Returns
+		-------
+		A dictionary in which each Party has its simulated number of seats.
 		"""
 		np.random.seed(seed) #we are setting the seed
 		seats = {key:int(self.Results[key]*self.Ndeputies*self.Propcoef)+int(self.Results[key]*(1-sum(list(self.Results.values())))) for key in list(self.Results.keys())}
@@ -158,18 +182,17 @@ class Montecarlo_electoral:
 	
 	def complete_simulation(self,N=1000):
 		"""
-		This function provides a valid extimation for the assigned number of seats by
-		averagiong over 1000 iterations of the simulation.
+		This function provides a valid extimation for the assigned number of seats by averaging over N iterations.
 
 		Parameters
 		----------
-		N is the number of iterations. It is large enough for our simulation to converge
+		N is the number of iterations. It must be large enough for our simulation to converge
 
 		Returns
+		-------
 		A dictionary with the Results of our total simulation.
 		It will be used to be confronted with real data in the case of past elections
 		or to foresee an upcoming election.
-		None.
 
 		"""
 		seats = {key:0 for key in list(self.Results)}
@@ -189,12 +212,12 @@ class Montecarlo_electoral:
 
 
 	
-	def graphic(self,final,real = {}): 
+	def graphic(self,final): 
 		"""
-		graphic is a method which returns and saves two graphs, a histogram in which 
-		the data of our complete_simulation will be shown and  another where all the
-		data coming from all the iterations of the simulation are displayed
-
+		graphic(final,real) is a method which returns and saves two graphs,
+		a histogram in which the data of our complete_simulation will be shown
+		and  another where all thedata coming from all the iterations of the simulation are displayed
+		
 		Parameters
 		----------
 		final : It is a dictionary shaped according to complete_simulation()
@@ -206,21 +229,29 @@ class Montecarlo_electoral:
 		ValueError:
 			if real and final have two different lenghts
 			if the keys of real and those of final are different
-
-
-		"""
+		
+		Returns
+		------
+		None"""
 		
 		
 		
-		bins = np.linspace(0,self.Ndeputies,int(self.Ndeputies/2)) #Creating an adeguate linspace
+		bins 		= np.linspace(0,self.Ndeputies,int(self.Ndeputies/2)) #Creating an adeguate linspace
+		real 		= [line.strip() for line in open('Elections/Real_Election_for_Confrontation.txt')]
+		print(len(real))
 		
+		print(real) 
 		if len(real) == 0:
 			
 			
 			for i in self.Parties:
 				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim') #Creating the single histogram
 		
-		if len(real) !=0:
+		
+		
+		elif len(real) !=0:
+			
+			real        = {real[0].split('\t')[i]:float(real[1].split('\t')[i]) for i in range(len(real[0].split('\t')))}
 			
 			if len(real) != len(final):
 				raise ValueError ('There is not the same number of both real ad simulated parties!')
@@ -251,8 +282,6 @@ class Montecarlo_electoral:
 		plt.legend(loc='upper right')
 		plt.savefig("Graphic/Numbers of possible results_for_"+self.election+'.png')
 		plt.close()
-
-
 
 
 

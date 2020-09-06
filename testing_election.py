@@ -10,6 +10,7 @@ import random as rd
 import Electoral_Montecarlo
 from hypothesis import given
 import hypothesis.strategies as st
+from hypothesis import settings
 
 Results2018={'M5S':0.327,'Centrodestra':0.375,'Centrosinistra':0.22,'LeU':0.03}
 Seats2018  ={'M5S':221,'Centrosinistra':113,'Centrodestra':260,'LeU':14} #excluding abroad seats
@@ -19,7 +20,17 @@ Seats2018  ={'M5S':221,'Centrosinistra':113,'Centrodestra':260,'LeU':14} #exclud
 
 
 
-def test_max_key(): #key with the max value in a dictionary
+def test_max_key():
+	"""
+	This test verifies that if max_key has a dictionary with two keys sharing
+	the same values which is also the highest value of the dictionary, then it
+	will return a list of such two keys.
+
+	Returns
+	-------
+	None.
+
+	"""
 	examples1 = dict([('A',400),('B',200),('C',400),('D',300)])
 	examples2 = dict([('A',''),('B',''),('C',''),('D','')])
 	mk1       = Electoral_Montecarlo.max_key(examples1)
@@ -35,27 +46,66 @@ def test_max_key(): #key with the max value in a dictionary
 
 
 
-def test_constructor_Montecarlo(): #testing for the proper initializion of the object of the class.
+def test_constructor_Montecarlo(): 
+	"""
+	
+	This test makes sure that all the paremeters of the class Montecarlo_electoral
+	are initialized with their default value.
+	
+	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
-	assert m.election == 'Italian_2018_General_Election'
+	assert m.election == 'Italian_2018_General_Election' #testing the proper initializion of the default parameter.
+	assert m.Propcoef ==  0.61
+	assert m.Majorcoef==  0.37
+	assert m.Ndeputies==  630
 	
 	
 	
+def test_import_as_txt(): 
+	"""
 	
-def test_import_as_txt(): #testing if the input files exist
+	This test function tests the efficienct of data acquiring from a txt file.
+	The Results stored in a dictionary form are then compared with the results
+	I expect to import.
+
+	Returns
+	-------
+	None.
+
+	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.import_as_txt('Test/test.txt')
 	assert m.Results == Results2018 #Comparing the two alleged similar dictionaries
 
 
 def test_import_as_excel():
+	"""
+	
+	This test function tests the efficienct of data acquiring from a txt file.
+	The Results stored in a dictionary form are then compared with the results
+	I expect to import.
+	
+	Returns
+	-------
+	None.
+	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.import_as_excel('Test/test.xls')
 	assert m.Results == Results2018 
 	
 	
 	
-def test_check_import(): #Testing if the imported data can be used or not
+def test_check_import():
+	"""
+	
+	This test function checks if the ValueErrors in case of inconsistent acquired
+	data are actually raised.
+
+	Returns
+	-------
+	None.
+
+	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 
 	m.Parties = ['Pd','Pd','Lega','FDI'] #Two parties with the same name, impossible
@@ -68,35 +118,65 @@ def test_check_import(): #Testing if the imported data can be used or not
 	with pytest.raises(ValueError):
 		m.check_import()
 	
+	m.Propcoef,m.Majorcoef = [0.5,0.6]
+	with pytest.raises(ValueError):
+		m.check_import()
+	
+	
 	m.import_as_txt('Test/test.txt')
 	assert m.check_import() == True #We can see here that our check returns True when everyrhing is properly written
 	
 		
 		
 @given(x = st.integers())
+@settings(max_examples=20)
 def test_fill_feats(x): #with this we prove that the algorithm is independent on the prop coefficients and on the majority coefficients
+	"""
+	
+	This test verifies that the algorithm of fill_seats() is independent on the
+	prop / maj coefficients and on the number of deputates.
+	
+	Returns:
+	-------
+	None
+	
+	"""
+	
+	
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.Results = {'A':0.33,'B':0.15,'C':0.27,'D':0.25}
-	if (x>0 and x<10000000): #Of course I don't look for high values (Approximations could be a problem as we approach infinity. Besides it would make a no sense a Parliament made of 100000000 people)
+	
+	#Of course I don't look for high values (Approximations could be a problem as we approach infinity.
+	#Besides it would make  no sense a Parliament made of 100000000 people)
+	if (x>1 and x<10000000): 
 		m.Majorcoef = float(1/x)
 		m.Propcoef  = 1-float(1/x)
 		m.Ndeputies = x
-		assert sum(m.fill_seats().values()) <= m.Ndeputies
-	
+		#The number of assigned seats is not larger than the number of deputates
+		assert sum(m.fill_seats().values()) <= m.Ndeputies 
+		#The party with the highest parcentage gets the largest number of seats.
+		assert Electoral_Montecarlo.max_key(m.fill_seats())[0] == 'A' 
 
 
-
-#I have proven that it is ok for any results, for any number of total deputates and for the coefficients Major and Prop.
 def test_complete_simulation():
+	"""
+	With this test I compare the assigned seats of a past election (2018 Italian
+	General Election) with the simulated results of complete_simulation(on the same
+	election). I verify that the simulation converges on the real assigned seats
+	with a discrepancy of the 5%.
+
+	Returns
+	-------
+	None.
+
+	"""
 	m = Electoral_Montecarlo.Montecarlo_electoral()
 	m.Results = Results2018
 
 	s         = m.complete_simulation()
 	for i in s.keys():
-		assert  np.abs(s[i]-Seats2018[i])<12 #I want to proof that the function works because it converges to a value very close to the real one.
-		
-	
-
+		#I want to proof that the function works because it converges to a value very close to the real one.
+		assert  np.abs(s[i]-Seats2018[i])<(m.Ndeputies*0.05) 
 	
 	
 	

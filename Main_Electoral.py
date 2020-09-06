@@ -26,6 +26,6 @@ for i in list(CS.keys()):
 	print((i + '\t' + str(CS[i])),file = f) #Saving the results on the txt file.
 f.close()
 
-m.graphic(CS,Seats2018) #This is the graphic part. A proper argument is given as an example.
+m.graphic(CS) #This is the graphic part. A proper argument is given as an example.
 
 
