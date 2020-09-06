@@ -248,9 +248,7 @@ class Montecarlo_electoral:
 		bins 		= np.linspace(0,self.Ndeputies,int(self.Ndeputies/2))
 		#opening the real assigned seats file 
 		real 		= [line.strip() for line in open('Elections/Real_Election_for_Confrontation.txt')]
-		print(len(real))
-		
-		print(real) 
+
 		if len(real) == 0:
 			
 			
