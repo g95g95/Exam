@@ -1,0 +1,5 @@
+Simulated Seats of 2018_Italian_General_elections
+M5S	211
+Cdx	259
+Csx	114
+LeU	11
