@@ -23,9 +23,7 @@ structure by splitting the seat allocation into two independent steps:
 We allocate $N_\text{prop} = \lfloor \alpha N \rceil$ seats according to the
 largest-remainder (Hare) method.  Defining the quotas
 
-\[
-q_i = p_i \cdot N_\text{prop},
-\]
+![equazione](https://latex.codecogs.com/svg.image?q_i%20=%20p_i%20\cdot%20N_\text{prop})
 
 the integer part $\lfloor q_i \rfloor$ is first assigned to each party.  The
 remaining seats are then distributed following the ordering induced by the
