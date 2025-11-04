@@ -4,30 +4,36 @@ Created on Fri Nov 15 23:30:13 2019
 @author: Giulio
 """
 
-from Electoral_Montecarlo import Montecarlo_electoral
+from pathlib import Path
+
+from Electoral_Montecarlo import MontecarloElectoral
 
 
-#Initializing an object of the class
-m = Montecarlo_electoral()
+# Initializing an object of the class
+m = MontecarloElectoral()
 
 # Filling the parameters of the class
 m.import_as_txt()
 
-#Interpreting correctly the parameter of the class
-m.check_import() 
+# Interpreting correctly the parameter of the class
+m.check_import()
 
-#I can roughly see what happens at the end of the simulation in the stoutput
-CS  = m.complete_simulation() 
+# I can roughly see what happens at the end of the simulation in the stoutput
+CS = m.complete_simulation()
 
-f = open('Results/'+m.election+'.txt','w')
-print('Simulated Seats of '+m.election,file = f)
+output_path = Path('Results') / f"{m.data.name}.txt"
+output_path.parent.mkdir(parents=True, exist_ok=True)
+with output_path.open('w', encoding='utf-8') as f:
+    print('Simulated Seats of ' + m.data.name, file=f)
 
-for i in list(CS.keys()):
-	#Saving the results on the txt file.
-	print((i + '\t' + str(CS[i])),file = f)
-f.close()
+    for party, seats in sorted(CS.items(), key=lambda item: item[1], reverse=True):
+        # Saving the results on the txt file, ordered by seat count.
+        print((party + '\t' + str(seats)), file=f)
 
-#This is the graphic part.
-m.graphic(CS) 
+# This is the graphic part.
+try:
+    m.graphic(CS)
+except RuntimeError as exc:
+    print(f"Skipping graphics: {exc}")
 
 

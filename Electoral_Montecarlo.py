@@ -1,302 +1,398 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Oct 30 17:12:33 2019
-@author: Giulio
+"""Utilities for running Monte Carlo simulations of electoral systems.
+
+The module keeps the original spirit of the project – simulate the allocation of
+parliamentary seats by combining proportional and majoritarian tiers – while
+favouring a lightweight, dependency free implementation.  Only the optional
+Excel import and plotting helpers rely on third party libraries; the simulation
+core itself now uses the Python standard library which makes the code easier to
+run in constrained environments.
 """
 
+from __future__ import annotations
 
-import numpy as np
-import random as rd
-import pandas as pd
 import math
-import matplotlib.pylab as plt
+import random
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, Iterable, List, Mapping, Optional, Sequence
 
 
+@dataclass
+class ElectionData:
+    """Container for the deterministic parameters of an election scenario."""
+
+    name: str
+    parties: List[str] = field(default_factory=list)
+    proportional_shares: List[float] = field(default_factory=list)
+    proportional_coefficient: float = 0.61
+    majoritarian_coefficient: float = 0.37
+    seats: int = 630
+
+    def __post_init__(self) -> None:  # pragma: no cover - simple coercion
+        self.parties = list(self.parties)
+        self.proportional_shares = [float(value) for value in self.proportional_shares]
+        self.proportional_coefficient = float(self.proportional_coefficient)
+        self.majoritarian_coefficient = float(self.majoritarian_coefficient)
+        self.seats = int(self.seats)
+        self._validate()
+
+    # ------------------------------------------------------------------
+    # Validation helpers
+    # ------------------------------------------------------------------
+    def validate(self) -> None:
+        """Expose validation to external callers."""
+
+        self._validate()
+
+    def _validate(self) -> None:
+        if not self.parties:
+            raise ValueError("At least one party must be provided")
+
+        if len(self.parties) != len(self.proportional_shares):
+            raise ValueError("Each party must have a corresponding share value")
+
+        if len(set(self.parties)) != len(self.parties):
+            raise ValueError("Each party must have a unique name")
+
+        if any(share < 0.0 for share in self.proportional_shares):
+            raise ValueError("Vote shares cannot contain negative values")
+
+        if not 0.0 <= self.proportional_coefficient <= 1.0:
+            raise ValueError("The proportional coefficient must lie in [0, 1]")
+
+        if not 0.0 <= self.majoritarian_coefficient <= 1.0:
+            raise ValueError("The majoritarian coefficient must lie in [0, 1]")
+
+        if self.proportional_coefficient + self.majoritarian_coefficient > 1.0:
+            raise ValueError(
+                "The sum of proportional and majoritarian coefficients cannot exceed one"
+            )
+
+        if self.seats <= 0:
+            raise ValueError("The total number of seats must be strictly positive")
 
 
-def max_key(d):
-	"""
-	This function operates with dictionaries.
+class MontecarloElectoral:
+    """High level façade for simulating elections.
 
-	Parameters
-	-------
-	d : a generic dictionary with numeric values.
+    Parameters
+    ----------
+    election:
+        Human readable identifier used when plotting and reporting.
+    rng:
+        External pseudo random number generator.  Supplying one makes the
+        simulation deterministic and eases testing.  When omitted a fresh
+        :class:`random.Random` instance is created.
+    """
 
-	Returns
-	-------
-	A list containing the keys with the highest values.
+    def __init__(
+        self,
+        election: str = "Italian_2018_General_Election",
+        rng: Optional[random.Random] = None,
+    ) -> None:
+        self.data = ElectionData(
+            name=election,
+            parties=["Party"],
+            proportional_shares=[1.0],
+            proportional_coefficient=0.61,
+            majoritarian_coefficient=0.37,
+            seats=630,
+        )
+        self.results: Dict[str, float] = {"Party": 1.0}
+        self.allResults: Dict[str, List[int]] = {}
+        self._rng: random.Random = rng or random.Random()
 
-	"""
-	if len(d) == 0:
-		raise ValueError ('The vocabulary you gave me is empty')
-		return 0
-	
-	max_val = max(list(d.values()))
-	#the list of the keys having the highest value of d
-	max_keys = [i for i in list(d.keys()) if d[i] == max_val]
+    # ------------------------------------------------------------------
+    # Import helpers
+    # ------------------------------------------------------------------
+    def import_as_excel(self, filename: str = "Elections/Election.xls") -> None:
+        """Populate the internal state by parsing an Excel spreadsheet."""
 
-	return (max_keys)
+        try:
+            import pandas as pd  # type: ignore
+        except Exception as exc:  # pragma: no cover - optional dependency
+            raise RuntimeError(
+                "Reading Excel files requires the optional 'pandas' dependency"
+            ) from exc
 
-	
+        frame = pd.read_excel(filename)
+        parties = list(frame.columns)
+        proportional_shares = [float(frame[party].iloc[0]) for party in parties]
+        proportional_coefficient = float(frame[parties[1]].iloc[1])
+        majoritarian_coefficient = float(frame[parties[1]].iloc[2])
+        seats = int(frame[parties[1]].iloc[3])
+        election_name = str(frame[parties[1]].iloc[4])
 
-class Montecarlo_electoral:
-	 
-	
-	
-	def __init__ (self,election = 'Italian_2018_General_Election'):	
-		""" 
-		
-		This is the Constructor of the class Montecarlo_electoral
-		    
-	    Attributes
-		-------
-        Ndeputies: The number of deputies elected during our election.
-        Results:   It is an empty dictionary that will be filled with the results of our simulation.
-		Propval:   The %results of the setted election.
-		Parties:   The names of the parties/coalitions in the setted election.
-		Majorcoef: The value of the majoritary coefficient.
-		Propcoef:  The value of the proportional coefficient.
-		Election:  The name of the setted election.
-		allResults:A list of all the results of the simulation
-		
-		Returns
-		-------
-		None
-		
-		"""	
-		#All parameters fixed on italian conditions
-		self.Ndeputies           = 630 
-		self.Propval 			 = []
-		self.Parties             = []
-		self.Majorcoef           = 0.37 
-		self.Propcoef            = 0.61 
-		self.checkinput          = True 
-		self.election            = election
-		self.allResults          = {}
-	
-	
-	
-	
-	def import_as_excel(self,filename = 'Elections/Election.xls'):		
-		"""
-		This is a method that allows to import the data we need from an excel file.
-	
-		Parameters
-		-------
-		filename  :  It is simply the name of the file
-		
-		Returns
-		-------
-		None
-		"""
-			
-		#opening of the excel files as a Dataframe	
-		xls            = pd.read_excel(filename) 
+        self._set_data(
+            name=election_name,
+            parties=parties,
+            proportional_shares=proportional_shares,
+            proportional_coefficient=proportional_coefficient,
+            majoritarian_coefficient=majoritarian_coefficient,
+            seats=seats,
+        )
 
-		#initializing all the main parameters of the class
-		self.Parties   = list(xls.columns)
-		self.Propval   = list(float(xls[Party][0]) for Party in self.Parties)
-		self.Propcoef  = float([(xls[Party][1]) for Party in self.Parties][1])
-		self.Majorcoef = float([(xls[Party][2]) for Party in self.Parties][1])
-		self.Ndeputies = float([(xls[Party][3]) for Party in self.Parties][1])
-		self.election  = str([(xls[Party][4]) for Party in self.Parties][1])
-		self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])
+    def import_as_txt(self, filename: str = "Elections/Election.txt") -> None:
+        """Populate the internal state by parsing a tab separated text file."""
 
-		
-		
-		
-	def import_as_txt(self,filename = 'Elections/Election.txt'):	
-		"""
-		This is a method that allows to import the data we need from a txt file.
-	
-		Parameters
-		-------
-		filename  :  It is simply the name of the file
-		
-		
-		Returns
-		-------
-		None
-		"""		
+        lines = [line.strip() for line in Path(filename).read_text().splitlines()]
+        if len(lines) < 6:
+            raise ValueError("The provided file does not contain all required entries")
 
-		#opening of the file 
-		file           = [line.strip() for line in open(filename)] 
-		
-		#initializing all the main parameters of the class
-		self.election  = file[0]
-		self.Parties   = file[1].split('\t')
-		self.Propval   = [float(r) for r in file[2].split('\t')]
-		self.Propcoef  = float(file[3].split('\t')[1])
-		self.Majorcoef = float(file[4].split('\t')[1])
-		self.Ndeputies = float(file[5].split('\t')[1])
-		self.Results   = dict([(self.Parties[i],self.Propval[i]) for i in range(len(self.Parties))])	
+        name = lines[0]
+        parties = lines[1].split("\t")
+        proportional_shares = [float(value) for value in lines[2].split("\t")]
+        proportional_coefficient = float(lines[3].split("\t")[1])
+        majoritarian_coefficient = float(lines[4].split("\t")[1])
+        seats = int(float(lines[5].split("\t")[1]))
+
+        self._set_data(
+            name=name,
+            parties=parties,
+            proportional_shares=proportional_shares,
+            proportional_coefficient=proportional_coefficient,
+            majoritarian_coefficient=majoritarian_coefficient,
+            seats=seats,
+        )
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+    def check_import(self) -> bool:
+        """Return ``True`` if the current election data is self-consistent."""
+
+        self.data.validate()
+
+        total_share = sum(self.data.proportional_shares)
+        if total_share > 1.0 + 1e-9:
+            raise ValueError(
+                "The sum of proportional results exceeds one; the inputs are not normalised"
+            )
+
+        self.results = dict(zip(self.data.parties, self.data.proportional_shares))
+        return True
+
+    def fill_seats(
+        self,
+        seed: Optional[int] = None,
+        rng: Optional[random.Random] = None,
+    ) -> Dict[str, int]:
+        """Run a single Monte Carlo draw returning the simulated seat allocation."""
+
+        self._ensure_loaded()
+        generator = self._resolve_rng(seed=seed, rng=rng)
+        seat_vector = self._simulate_single_draw(generator)
+        return {
+            party: seat_vector[index]
+            for index, party in enumerate(self.data.parties)
+        }
+
+    def complete_simulation(
+        self,
+        iterations: int = 1_000,
+        seed: Optional[int] = None,
+    ) -> Dict[str, int]:
+        """Compute the expected seat distribution by averaging many draws."""
+
+        if iterations <= 0:
+            raise ValueError("The number of iterations must be strictly positive")
+
+        self._ensure_loaded()
+        generator = self._resolve_rng(seed=seed)
+
+        totals = [0] * len(self.data.parties)
+        history = [[] for _ in self.data.parties]
+
+        for _ in range(iterations):
+            draw = self._simulate_single_draw(generator)
+            for index, value in enumerate(draw):
+                totals[index] += value
+                history[index].append(value)
+
+        self.allResults = {
+            party: list(history[index])
+            for index, party in enumerate(self.data.parties)
+        }
+
+        averaged = [int(round(total / iterations)) for total in totals]
+        return {
+            party: averaged[index]
+            for index, party in enumerate(self.data.parties)
+        }
+
+    def graphic(
+        self,
+        final: Mapping[str, int],
+        real_results_path: str = "Elections/Real_Election_for_Confrontation.txt",
+    ) -> None:
+        """Persist histograms comparing simulated and historical outcomes."""
+
+        try:
+            import matplotlib.pylab as plt  # pragma: no cover - plotting side effect
+        except Exception as exc:  # pragma: no cover - optional dependency
+            raise RuntimeError(
+                "Generating graphics requires the optional 'matplotlib' dependency"
+            ) from exc
+
+        self._ensure_loaded()
+
+        bin_count = max(10, min(self.data.seats, self.data.seats // 2 or 1))
+        real_results = self._load_real_results(Path(real_results_path))
+        final_seats = dict(final)
+        avg_label_used = False
+        real_label_used = False
+
+        for party in self.data.parties:
+            simulated_history = self.allResults.get(party, [])
+            if not simulated_history:
+                continue
+            plt.hist(simulated_history, bins=bin_count, alpha=0.5, label=f"{party} (sim)")
+            if final_seats:
+                plt.axvline(
+                    final_seats.get(party, 0),
+                    color="black",
+                    linewidth=1.5,
+                    label=f"{party} (avg)" if not avg_label_used else None,
+                )
+                avg_label_used = True
+            if real_results:
+                plt.axvline(
+                    real_results.get(party, 0),
+                    linestyle="--",
+                    label=f"{party} (real)" if not real_label_used else None,
+                )
+                real_label_used = True
+
+        plt.xlabel("Seats")
+        plt.legend(loc="upper right")
+        plt.title(self.data.name)
+        plt.savefig(f"Graphic/Histogram-Confrontation_for_{self.data.name}.png")
+        plt.close()
+
+        for party in self.data.parties:
+            share = self.results.get(party, 0.0)
+            if share < 0.05:
+                continue
+            simulated_history = self.allResults.get(party, [])
+            if not simulated_history:
+                continue
+            plt.hist(simulated_history, bins=bin_count, alpha=0.5, label=party)
+            if final_seats:
+                plt.axvline(
+                    final_seats.get(party, 0),
+                    color="black",
+                    linewidth=1.5,
+                    label="Expected seats" if party == self.data.parties[0] else None,
+                )
+
+        plt.xlabel("Seats")
+        plt.legend(loc="upper right")
+        plt.savefig(f"Graphic/Numbers of possible results_for_{self.data.name}.png")
+        plt.close()
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+    def _set_data(
+        self,
+        *,
+        name: str,
+        parties: Iterable[str],
+        proportional_shares: Iterable[float],
+        proportional_coefficient: float,
+        majoritarian_coefficient: float,
+        seats: int,
+    ) -> None:
+        self.data = ElectionData(
+            name=name,
+            parties=list(parties),
+            proportional_shares=list(proportional_shares),
+            proportional_coefficient=proportional_coefficient,
+            majoritarian_coefficient=majoritarian_coefficient,
+            seats=seats,
+        )
+        self.results = dict(zip(self.data.parties, self.data.proportional_shares))
+
+    def _ensure_loaded(self) -> None:
+        if not self.data.parties:
+            raise RuntimeError("No election data loaded. Import data before simulating.")
+
+    def _resolve_rng(
+        self,
+        *,
+        seed: Optional[int] = None,
+        rng: Optional[random.Random] = None,
+    ) -> random.Random:
+        if seed is not None:
+            return random.Random(seed)
+        if rng is not None:
+            return rng
+        return self._rng
+
+    def _simulate_single_draw(self, rng: random.Random) -> List[int]:
+        proportional = self._allocate_proportional_seats()
+        majoritarian = self._allocate_majoritarian_seats(rng)
+        return [p + m for p, m in zip(proportional, majoritarian)]
+
+    def _allocate_proportional_seats(self) -> List[int]:
+        proportional_total = int(round(self.data.seats * self.data.proportional_coefficient))
+        raw_quotas = [share * proportional_total for share in self.data.proportional_shares]
+
+        base = [int(math.floor(quota)) for quota in raw_quotas]
+        assigned = sum(base)
+        remainder = proportional_total - assigned
+
+        if remainder > 0:
+            fractional = [quota - floor for quota, floor in zip(raw_quotas, base)]
+            order = sorted(
+                range(len(self.data.parties)),
+                key=lambda index: (
+                    -fractional[index],
+                    -self.data.proportional_shares[index],
+                    index,
+                ),
+            )
+            for index in order[:remainder]:
+                base[index] += 1
+
+        return base
+
+    def _allocate_majoritarian_seats(self, rng: random.Random) -> List[int]:
+        majoritarian_total = int(round(self.data.seats * self.data.majoritarian_coefficient))
+        if majoritarian_total <= 0:
+            return [0] * len(self.data.parties)
+
+        result = [0] * len(self.data.parties)
+        for _ in range(majoritarian_total):
+            winner = self._weighted_choice(rng, self.data.proportional_shares)
+            result[winner] += 1
+        return result
+
+    def _weighted_choice(self, rng: random.Random, weights: Sequence[float]) -> int:
+        total = sum(weights)
+        if total <= 0.0:
+            raise ValueError("Weights must sum to a positive value")
+
+        threshold = rng.random() * total
+        cumulative = 0.0
+        for index, weight in enumerate(weights):
+            cumulative += weight
+            if threshold <= cumulative:
+                return index
+        return len(weights) - 1  # pragma: no cover - guard against rounding issues
+
+    def _load_real_results(self, path: Path) -> Dict[str, float]:
+        if not path.exists():
+            return {}
+
+        lines = [line.strip() for line in path.read_text().splitlines() if line.strip()]
+        if len(lines) < 2:
+            return {}
+
+        parties = lines[0].split("\t")
+        seats = [float(value) for value in lines[1].split("\t")]
+        return dict(zip(parties, seats))
 
 
-	def check_import(self) :
-		"""
-		This method checks if the imported data makes sense.
-		
-		Returns
-		-------
-		True:  if everything is okay
-		False: if illogic data are imported.
-
-		"""		
-		for i in self.Parties:	
-			if self.Parties.count(i)>1:
-				raise ValueError('There are' + str(self.Parties.count(i))+ 'parties with the same name!')
-				return False
-		
-		if sum(self.Propval)>1:
-			raise ValueError("The sum of the 'proportional' result is larger than 1. Not possible")
-			return False
-		
-
-		   
-		if  (self.Propcoef + self.Majorcoef) >1:
-			raise ValueError('Something is wrong with the values of the two coefficients\n')	
-			return False
-		
-		return True
-
-
-
-				   
-	def fill_seats(self,seed = 1): 
-		"""
-		This method is the core of the program. It is used to fill the seats of our simulated Parliament.
-		
-		Arguments
-		-------
-		seed:    It is the seed to give as an argument to the random number, to reproduce the simulation.
-		
-		Returns
-		-------
-		A dictionary in which each Party has its simulated number of seats.
-		"""
-		#we are setting the seed
-		np.random.seed(seed)
-		seats = {key:int(self.Results[key]*self.Ndeputies*self.Propcoef)+int(self.Results[key]*(1-sum(list(self.Results.values())))) for key in list(self.Results.keys())}
-		
-		for i in range (int(self.Ndeputies*self.Majorcoef)):
-			
-			Resultscopy = self.Results.copy()
-			#this is the core of the program
-			Resultscopy = {key:self.Results[key]*np.random.rand() for key in self.Results.keys()}
-			#The Party whit the highest value is winning the seat
-			seats[rd.choice(max_key(Resultscopy))]+=1 
-		
-		return seats
-	
-	def complete_simulation(self,N=1000):
-		"""
-		This function provides a valid extimation for the assigned number of seats by averaging over N iterations.
-
-		Parameters
-		----------
-		N is the number of iterations. It must be large enough for our simulation to converge
-
-		Returns
-		-------
-		A dictionary with the Results of our total simulation.
-		It will be used to be confronted with real data in the case of past elections
-		or to foresee an upcoming election.
-
-		"""
-		seats = {key:0 for key in list(self.Results)}
-		
-		#this variables shall be used for the Graphic part.
-		self.allResults = {key:[self.fill_seats(i)[key] for i in range (N)] for key in list(self.Results.keys())}
-		for i in range(N):
-			
-			newseats = self.fill_seats(i)
-			
-			for key in list(self.Results):
-				
-				seats[key]+=newseats[key]
-			
-			 
-		average_seats = {key:int(seats[key]/N) for key in list(self.Results.keys()) }
-		return average_seats
-
-
-	
-	def graphic(self,final): 
-		"""
-		graphic(final,real) is a method which returns and saves two graphs,
-		a histogram in which the data of our complete_simulation will be shown
-		and  another where all thedata coming from all the iterations of the simulation are displayed
-		
-		Parameters
-		----------
-		final : It is a dictionary shaped according to complete_simulation()
-		real : It is a dictionary containing the true results of the elecion we are simulating
-
-
-		Raises
-		------
-		ValueError:
-			if real and final have two different lenghts
-			if the keys of real and those of final are different
-		
-		Returns
-		------
-		None"""
-		
-		
-		#Creating an adeguate linspace
-		bins 		= np.linspace(0,self.Ndeputies,int(self.Ndeputies/2))
-		#opening the real assigned seats file 
-		real 		= [line.strip() for line in open('Elections/Real_Election_for_Confrontation.txt')]
-
-		if len(real) == 0:
-			
-			
-			for i in self.Parties:
-				#Creating the single histogram
-				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim') 
-		
-		
-		
-		elif len(real) !=0:
-			
-			real        = {real[0].split('\t')[i]:float(real[1].split('\t')[i]) for i in range(len(real[0].split('\t')))}
-			
-			if len(real) != len(final):
-				raise ValueError ('There is not the same number of both real ad simulated parties!')
-			
-			if final.keys() != real.keys():
-				raise ValueError ('The simulated Parties and the real parties seem to have different names!')
-			
-			
-			
-			for i in self.Parties:
-				plt.hist(final[i],bins,alpha = 0.5,label = i+'_sim')
-				#creating an histogram with both real and results data displayed
-				plt.hist(real[i],bins,alpha = 0.5,label = i + 'real') 
-			
-			
-		plt.xlabel('Seats')
-		plt.legend(loc='upper right')
-		plt.title(self.election)
-		#saving the histogram
-		plt.savefig("Graphic/Histogram-Confrontation_for_"+self.election+".png") 
-		plt.close()
-	
-		for i in self.Parties:
-			if self.Results[i]<0.05:
-				continue
-			#Plotting the histogram with all possible results throughout the simulation.
-			plt.hist(self.allResults[i],bins,alpha = 0.5,label = i) 
-			
-
-		plt.xlabel('Seats')
-		plt.legend(loc='upper right')
-		#Saving the histogram
-		plt.savefig("Graphic/Numbers of possible results_for_"+self.election+'.png')
-		plt.close()
-
-
-
-
-
+__all__ = ["MontecarloElectoral"]

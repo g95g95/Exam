@@ -1,59 +1,126 @@
-# Montecarlo method for electoral laws
-A good electoral law should be a decent balancement of both representivity and governability. The first principly leads to proportional laws, the second to majoritary law. So in the last year electoral laws mixing these two features were experimented all over european democracies.
+# Monte Carlo Electoral Simulator
 
-Let's take into account the current italian eletcoral law and let's focus only on the election of "La Camera dei Deputati". There are 630  deputates in the small chamber. The 61% is elected in a proportional way (the party x gets N% votes, it gets 0.N*0.61*N_seats). The remaining 37% is elected through the collegia mechanism. This means the italian territory is split in 212 electoral collegia.
+This repository models mixed electoral systems—where a fraction of the
+legislature is chosen proportionally and the remainder by plurality contests—by
+means of a Monte Carlo procedure.  The simulator was originally designed around
+the Italian 2018 general election but is now generic enough to accommodate any
+scenario that can be expressed through the provided input files.
 
-In each collegium different electoral coalitions (or single parties) fight to win that collegium. In fact, if X coalition/pary reaches the highest precentage in the land which represents the collegium it will take that seat in the Parliament.
+## Mathematical framework
 
-The question rising up is the following: is it possible to foresee the assignment of the seats in the Parliament, only knowing the national results? The answer, as this program seems to prove, is yes.
+Let $p \in [0,1]^K$ denote the national vote shares of $K$ parties such that
+$\sum_{i=1}^K p_i \leq 1$ and let $N$ be the total number of seats in the
+chamber.  The electoral law is parameterised by two coefficients:
 
-The most obvious answer would be to assign the number of collegia according to the national results (X party gets N% votes, it will have N*0.37 seats in the Parliament).
+* proportional component $\alpha \in [0,1]$;
+* majoritarian component $\beta \in [0,1]$;
 
-This couldn't be further from the truth because if a party gets a score of 40% it is almost sure that it's going to win more than the 40% of collegia.
+with the requirement $\alpha + \beta \leq 1$.  The simulator mirrors this
+structure by splitting the seat allocation into two independent steps:
 
-Immagine we have three main coalitions (A = 40%, B = 30%, C = 20%) and let's consider a single collegium. If we consider the reults as probability weight, we can consider to multiply every score to a random number between 0 and 1. Then, the seat will be obtained by the highest score vehiculated by a random number.
+### Proportional tier
 
-If we repeat this procedure over all the collegia, eventually we will map all the national territory and reproduce with decent accurancy the whole national territory.
+We allocate $N_\text{prop} = \lfloor \alpha N \rceil$ seats according to the
+largest-remainder (Hare) method.  Defining the quotas
 
-Of course there are many flaws to this algorithm which is totally unable to foresee very localized electoral exploits of some regional parties. So if a party gets less than 1% on national scale and in a specific region with 3 collegia it has the 50% it will get 3 seats and no way to foresee that. (That is the case, for what concerns italian situation, of the SVP, the independent SudTirol Party).
+\[
+q_i = p_i \cdot N_\text{prop},
+\]
 
-Actually if we run very long simulations (milions and milions of iterations) a single anomalous result like that can be reproduced.
+the integer part $\lfloor q_i \rfloor$ is first assigned to each party.  The
+remaining seats are then distributed following the ordering induced by the
+fractional parts $q_i - \lfloor q_i \rfloor$.  This produces a near-exact
+discrete approximation of the continuous allocation $p_i \alpha N$ while
+respecting the total number of seats.
 
-The algorithm might also be used to highlight some shortcoming of the specific electoral law we're dealing with. It migh happen (even if it sounds absurd) that two parties obtainin almost the same results on national scale will have a completely different assignment of seats and this algorithm can see to that
+### Majoritarian tier
 
+For the remaining $N_\text{maj} = \lfloor \beta N \rceil$ seats we model a
+sequence of Bernoulli trials whose success probabilities are proportional to the
+national vote shares.  Each seat draw therefore amounts to sampling from the
+multinomial distribution
 
-# How to use the repository
+\[
+Y \sim \text{Multinomial}\bigl(N_\text{maj},\; (p_1, \ldots, p_K) / \sum_j p_j\bigr),
+\]
 
-* First the user should open [Elections](https://github.com/g95g95/Exam) and modify one of the two files (an excel or a txt file) according to the elections he wants to simulate. One must fill each file with the results of the Parties/Coalitions in recent polls of an upcoming election or with results coming from past elections, pay attention at respecting the sintax of the files. Now they are set according to the *2018 italian general election*. In the folder [Elections](https://github.com/g95g95/Exam) there is also another a txt file named *Real_Election_For_Confrontation*: it is currently setted according to *2018 Italian General elections*. If one aims to make a graphical comparison between the seats assigned during a past election and the ones assigned by a simulation will have to compile this file accordingly, carefully respecting its syntax. Conversely, if we are simulating an upcoming election, this file needs to stay empty and has to be cleant.
+which captures the intuition that stronger national performances translate into
+larger odds of prevailing in single member districts.  The combined seat vector
+$X = (X_1, \ldots, X_K)$ therefore arises from the sum of a deterministic
+allocation (proportional tier) and a multinomially distributed random variable
+(majoritarian tier).  The Monte Carlo routine repeatedly draws samples of $X$ to
+approximate its expectation and empirical distribution.
 
-* Once the user has filled the files with the proper parameters, the simulation is ready to be launched. That can be done by simply running [Main_electoral.py](https://github.com/g95g95/Exam) in a Python environment.
+## Repository layout
 
-* The results of the simulation will be stored in a txt file contained in [Results](https://github.com/g95g95/Exam). Histograms concerning the values of the assigned seats reached all over the iterations of the simulation will be stored in [Graphic](https://github.com/g95g95/Exam).
+```
+Exam/
+├── Electoral_Montecarlo.py   # MontecarloElectoral class and numerical core
+├── Main_Electoral.py         # Simple script wiring the workflow together
+├── Elections/                # Input data (TXT/XLS) and real-election benchmarks
+├── Graphic/                  # Generated histograms
+├── Results/                  # Simulation summaries (written as TXT files)
+├── Test/                     # Synthetic fixtures used by tests
+└── testing_election.py       # Pytest suite
+```
 
+Key abstractions are implemented in `Electoral_Montecarlo.py`:
 
-# Structure of the Repository
+* `MontecarloElectoral.import_as_txt` / `import_as_excel` load election
+  parameters.
+* `check_import` validates the configuration (normalised probabilities,
+  coefficients within bounds, unique party labels, etc.).
+* `complete_simulation(iterations, seed)` performs repeated Monte Carlo draws,
+  caches the full history in `allResults` and returns the expected seats.
+* `graphic` produces comparison histograms leveraging the cached draws and, if
+  available, historical seat allocations.
 
-* In the file [Electoral_Montecarlo.py](https://github.com/g95g95/Exam) a class *Montecarlo_electoral* is defined. All the methods that will be used in [Main_electoral.py](https://github.com/g95g95/Exam) are contained within it. The results of the simulation will be stored in the form of dictionaries. The methods also include a graphic method that will provide two histograms build upon such forementioned dictionaries.
+## Usage
 
-* The program also has a pytest routine [testing_electoral.py](https://github.com/g95g95/Exam) where all the methods are tested, mainly using **assert**-like tests.
+1. **Prepare the inputs.** Edit `Elections/Election.txt` (or the XLS
+   counterpart) with party names, proportional vote shares and coefficients. If
+   you wish to compare the simulation against historical results, populate
+   `Elections/Real_Election_for_Confrontation.txt` with the same ordering of
+   parties.
+2. **Run the driver script.** Execute `python Main_Electoral.py`.  The simulator
+   itself only depends on the Python standard library; install `pandas` if you
+   plan to import Excel spreadsheets and `matplotlib` to generate the optional
+   histograms.  The script imports the election, runs a complete simulation with
+   $N=1000$ iterations by default and exports the aggregated seats to `Results/`.
+3. **Inspect artefacts.** Histograms summarising the sampling distribution and
+   the real/simulated comparison are saved under `Graphic/`.
 
-* In the folder [Results](https://github.com/g95g95/Exam), as the name suggests, the results of the simulation are stored. It is a *txt* file with the seats assigned to each party/Coalition according to the simulation.
+Advanced users can directly instantiate `MontecarloElectoral` to tweak the
+number of iterations, plug in a custom random number generator for reproducible
+experiments or post-process the raw draw history stored in
+`MontecarloElectoral.allResults`.
 
-* In the folder [Test](https://github.com/g95g95/Exam) there are two "test" files (*.txt* and *.xls* respectively) to test the efficiency of data acquiring in the pytest routine. Both files are presetted on 2018 Italian General Elections.
+## Reproducibility and extension points
 
-* [Main_electoral.py](https://github.com/g95g95/Exam) is the main of my program. At first it creates an object of the class *Montecarlo_electoral* through the constructor of the class. Then a method to fill the parameter we need for the simulation is executed. A method *check_import* is also called soon after. If the data we acquired are not consistent, i.e. two parties/coalitions with the same name, the sum of the proportional results larger than 1, the sum of the proportional and majoritary coefficient larger than 1, then ValueErrors will be raised.Then the method *Complete_Simulation* is executed and its results stored in [Results](https://github.com/g95g95/Exam) as mentioned above. Eventually we call for the execution of the graphic method *graphic* which takes a default argument, beside the result of our simulation, namely the assigned seats during a real election that can be used to make graphical comparison with our simulated seats. The main then ends with histograms being saved in the folder [Graphic](https://github.com/g95g95/Exam).
+* Passing an explicit `random.Random` instance to `MontecarloElectoral` or a
+  `seed` to `complete_simulation` guarantees deterministic behaviour, making the
+  simulator suitable for unit testing and scenario comparisons.
+* The modular design allows the majoritarian kernel to be replaced with a more
+  sophisticated district-level model (e.g. correlated Gumbel draws, covariate
+  adjustments) while keeping the high-level API intact.
 
-* In the folder [Graphic](https://github.com/g95g95/Exam), the histograms of the method graphic are stored. They're probably the fanciest way to show this kind of results. Here below I show an example of how the histogram confrontating our simulated results with real assigned seats looks like (always for 2018 Italian General Elections).
+## Publishing the `chatGPT_Test` branch
 
-![2018IGE1](https://github.com/g95g95/Exam/blob/master/Graphic/Histogram-Confrontation_for_2018_Italian_General_elections.png)
+The execution environment used to prepare these changes cannot reach your Git
+remote, so the branch must be pushed from a machine that has access to the
+repository.  To publish the local history under the name `chatGPT_Test`, run:
 
+```bash
+git checkout chatGPT_Test
+git push origin chatGPT_Test
+```
 
+If the branch does not yet exist on the remote, the push will create it
+automatically.  You can then open a pull request from `chatGPT_Test` to your
+mainline branch as usual.
 
+## License
 
-
-
-
-
-
-
+The contents of this repository are released under the terms specified in the
+original project.
 
