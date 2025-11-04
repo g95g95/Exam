@@ -38,9 +38,9 @@ sequence of Bernoulli trials whose success probabilities are proportional to the
 national vote shares.  Each seat draw therefore amounts to sampling from the
 multinomial distribution
 
-\[
-Y \sim \text{Multinomial}\bigl(N_\text{maj},\; (p_1, \ldots, p_K) / \sum_j p_j\bigr),
-\]
+$$
+Y \sim \text{Multinomial}\bigl(N_\text{maj}; (p_1, \ldots, p_K) / \sum_j p_j\bigr)
+$$
 
 which captures the intuition that stronger national performances translate into
 larger odds of prevailing in single member districts.  The combined seat vector
@@ -101,21 +101,6 @@ experiments or post-process the raw draw history stored in
 * The modular design allows the majoritarian kernel to be replaced with a more
   sophisticated district-level model (e.g. correlated Gumbel draws, covariate
   adjustments) while keeping the high-level API intact.
-
-## Publishing the `chatGPT_Test` branch
-
-The execution environment used to prepare these changes cannot reach your Git
-remote, so the branch must be pushed from a machine that has access to the
-repository.  To publish the local history under the name `chatGPT_Test`, run:
-
-```bash
-git checkout chatGPT_Test
-git push origin chatGPT_Test
-```
-
-If the branch does not yet exist on the remote, the push will create it
-automatically.  You can then open a pull request from `chatGPT_Test` to your
-mainline branch as usual.
 
 ## License
 
