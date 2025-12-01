@@ -1,0 +1,113 @@
+{
+  "election": {
+    "name": "2018 Italian General Elections",
+    "seats": 630,
+    "proportionalCoefficient": 0.61,
+    "majoritarianCoefficient": 0.37,
+    "description": "Italian Chamber of Deputies - Mixed electoral system"
+  },
+  "coalitions": [
+    {
+      "id": "m5s",
+      "name": "Movimento 5 Stelle",
+      "shortName": "M5S",
+      "color": "#f5d000",
+      "parties": ["m5s"]
+    },
+    {
+      "id": "cdx",
+      "name": "Centrodestra",
+      "shortName": "Cdx",
+      "color": "#0066cc",
+      "parties": ["lega", "fi", "fdi", "nci"]
+    },
+    {
+      "id": "csx",
+      "name": "Centrosinistra",
+      "shortName": "Csx",
+      "color": "#cc0000",
+      "parties": ["pd", "piu-europa", "insieme", "svp"]
+    },
+    {
+      "id": "leu",
+      "name": "Liberi e Uguali",
+      "shortName": "LeU",
+      "color": "#8b0000",
+      "parties": ["leu"]
+    }
+  ],
+  "parties": [
+    {
+      "id": "m5s",
+      "name": "Movimento 5 Stelle",
+      "shortName": "M5S",
+      "color": "#f5d000"
+    },
+    {
+      "id": "lega",
+      "name": "Lega",
+      "shortName": "Lega",
+      "color": "#008c45"
+    },
+    {
+      "id": "fi",
+      "name": "Forza Italia",
+      "shortName": "FI",
+      "color": "#0066cc"
+    },
+    {
+      "id": "fdi",
+      "name": "Fratelli d'Italia",
+      "shortName": "FdI",
+      "color": "#003366"
+    },
+    {
+      "id": "nci",
+      "name": "Noi con l'Italia",
+      "shortName": "NcI",
+      "color": "#4169e1"
+    },
+    {
+      "id": "pd",
+      "name": "Partito Democratico",
+      "shortName": "PD",
+      "color": "#cc0000"
+    },
+    {
+      "id": "piu-europa",
+      "name": "+Europa",
+      "shortName": "+Eu",
+      "color": "#ff6600"
+    },
+    {
+      "id": "insieme",
+      "name": "Insieme",
+      "shortName": "Ins",
+      "color": "#ff9999"
+    },
+    {
+      "id": "svp",
+      "name": "SVP",
+      "shortName": "SVP",
+      "color": "#006400"
+    },
+    {
+      "id": "leu",
+      "name": "Liberi e Uguali",
+      "shortName": "LeU",
+      "color": "#8b0000"
+    }
+  ],
+  "defaultVoteShares": {
+    "m5s": 0.327,
+    "cdx": 0.375,
+    "csx": 0.22,
+    "leu": 0.03
+  },
+  "realResults": {
+    "m5s": 221,
+    "cdx": 263,
+    "csx": 115,
+    "leu": 18
+  }
+}
