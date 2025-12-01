@@ -1,0 +1,84 @@
+{
+  "election": {
+    "name": "Generic Election",
+    "seats": 400,
+    "proportionalCoefficient": 0.5,
+    "majoritarianCoefficient": 0.5,
+    "description": "A generic mixed electoral system template"
+  },
+  "coalitions": [
+    {
+      "id": "coalition-a",
+      "name": "Coalition A",
+      "shortName": "A",
+      "color": "#3b82f6",
+      "parties": ["party-a1", "party-a2"]
+    },
+    {
+      "id": "coalition-b",
+      "name": "Coalition B",
+      "shortName": "B",
+      "color": "#ef4444",
+      "parties": ["party-b1", "party-b2"]
+    },
+    {
+      "id": "coalition-c",
+      "name": "Coalition C",
+      "shortName": "C",
+      "color": "#22c55e",
+      "parties": ["party-c1"]
+    },
+    {
+      "id": "others",
+      "name": "Others",
+      "shortName": "Oth",
+      "color": "#9ca3af",
+      "parties": ["others"]
+    }
+  ],
+  "parties": [
+    {
+      "id": "party-a1",
+      "name": "Party A1",
+      "shortName": "A1",
+      "color": "#3b82f6"
+    },
+    {
+      "id": "party-a2",
+      "name": "Party A2",
+      "shortName": "A2",
+      "color": "#60a5fa"
+    },
+    {
+      "id": "party-b1",
+      "name": "Party B1",
+      "shortName": "B1",
+      "color": "#ef4444"
+    },
+    {
+      "id": "party-b2",
+      "name": "Party B2",
+      "shortName": "B2",
+      "color": "#f87171"
+    },
+    {
+      "id": "party-c1",
+      "name": "Party C1",
+      "shortName": "C1",
+      "color": "#22c55e"
+    },
+    {
+      "id": "others",
+      "name": "Others",
+      "shortName": "Oth",
+      "color": "#9ca3af"
+    }
+  ],
+  "defaultVoteShares": {
+    "coalition-a": 0.35,
+    "coalition-b": 0.30,
+    "coalition-c": 0.25,
+    "others": 0.10
+  },
+  "realResults": null
+}
