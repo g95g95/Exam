@@ -81,26 +81,42 @@ app.post('/api/simulate', async (req, res) => {
       voteShares,
       iterations = 1000,
       seed,
+      customConfig,
     } = req.body as {
       electionId: string;
       voteShares: Record<string, number>;
       iterations?: number;
       seed?: number;
+      customConfig?: ElectionConfig;
     };
 
     // Validate inputs
-    if (!electionId) {
-      return res.status(400).json({ error: 'electionId is required' });
+    if (!electionId && !customConfig) {
+      return res.status(400).json({ error: 'electionId or customConfig is required' });
     }
 
     if (!voteShares || Object.keys(voteShares).length === 0) {
       return res.status(400).json({ error: 'voteShares is required' });
     }
 
-    // Load election config
-    const filePath = join(DATA_DIR, `${electionId}.json`);
-    const content = await readFile(filePath, 'utf-8');
-    const config = JSON.parse(content) as ElectionConfig;
+    let config: ElectionConfig;
+    let realResults: Record<string, number> | null = null;
+
+    if (customConfig) {
+      // Use custom config from UI
+      config = customConfig;
+    } else {
+      // Load election config from file
+      const filePath = join(DATA_DIR, `${electionId}.json`);
+      const content = await readFile(filePath, 'utf-8');
+      config = JSON.parse(content) as ElectionConfig;
+
+      // Get real results if available
+      const configWithResults = JSON.parse(content) as ElectionConfig & {
+        realResults?: Record<string, number> | null;
+      };
+      realResults = configWithResults.realResults || null;
+    }
 
     // Create simulator and load data
     const simulator = new MonteCarloElectoral(seed);
@@ -114,13 +130,10 @@ app.post('/api/simulate', async (req, res) => {
     // Run simulation
     const result = simulator.completeSimulation(iterations, seed);
 
-    // Add real results for comparison if available
-    const configWithResults = JSON.parse(content) as ElectionConfig & {
-      realResults?: Record<string, number> | null;
-    };
+    // Build response
     const response = {
       ...result,
-      realResults: configWithResults.realResults || null,
+      realResults,
       coalitions: config.coalitions,
     };
 
