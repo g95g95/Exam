@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electoral Monte Carlo Simulator</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Electoral Monte Carlo Simulator</h1>
+            <p class="subtitle">Simula l'allocazione dei seggi parlamentari con sistema misto proporzionale-maggioritario</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Configuration -->
+            <section class="panel config-panel">
+                <h2>Configurazione Elezione</h2>
+
+                <!-- Election Type -->
+                <div class="form-group">
+                    <label for="electionType">Tipo Elezione</label>
+                    <select id="electionType" onchange="handleElectionTypeChange()">
+                        <option value="generic">Elezione Generica</option>
+                        <option value="italian2018">Italiane 2018</option>
+                        <option value="custom">Personalizzata</option>
+                    </select>
+                </div>
+
+                <!-- Election Name -->
+                <div class="form-group">
+                    <label for="electionName">Nome Elezione</label>
+                    <input type="text" id="electionName" value="Generic Election" placeholder="Nome dell'elezione">
+                </div>
+
+                <!-- Seats Slider -->
+                <div class="form-group">
+                    <label for="seatsSlider">
+                        Seggi Totali: <span id="seatsValue" class="value-display">400</span>
+                    </label>
+                    <input type="range" id="seatsSlider" min="100" max="1000" value="400"
+                           oninput="updateSeatsDisplay()">
+                    <div class="slider-labels">
+                        <span>100</span>
+                        <span>1000</span>
+                    </div>
+                </div>
+
+                <!-- Proportional Slider -->
+                <div class="form-group">
+                    <label for="proportionalSlider">
+                        Proporzionale: <span id="proportionalValue" class="value-display proportional">50%</span>
+                    </label>
+                    <input type="range" id="proportionalSlider" min="0" max="100" value="50"
+                           oninput="updateCoefficients('proportional')">
+                    <div class="slider-labels">
+                        <span>0%</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+
+                <!-- Majoritarian Slider -->
+                <div class="form-group">
+                    <label for="majoritarianSlider">
+                        Maggioritario: <span id="majoritarianValue" class="value-display majoritarian">50%</span>
+                    </label>
+                    <input type="range" id="majoritarianSlider" min="0" max="100" value="50"
+                           oninput="updateCoefficients('majoritarian')">
+                    <div class="slider-labels">
+                        <span>0%</span>
+                        <span>100%</span>
+                    </div>
+                </div>
+
+                <!-- Warning for coefficient sum -->
+                <div id="coefficientWarning" class="warning hidden">
+                    La somma dei coefficienti non può superare 100%
+                </div>
+
+                <!-- Iterations -->
+                <div class="form-group">
+                    <label for="iterations">Iterazioni Simulazione</label>
+                    <input type="number" id="iterations" value="1000" min="100" max="100000" step="100">
+                </div>
+            </section>
+
+            <!-- Center Panel: Summary -->
+            <section class="panel summary-panel">
+                <h2 id="summaryTitle">Generic Election</h2>
+                <div class="summary-stats">
+                    <div class="stat-card">
+                        <span class="stat-label">Seggi Totali</span>
+                        <span class="stat-value" id="summarySeats">400</span>
+                    </div>
+                    <div class="stat-card proportional-bg">
+                        <span class="stat-label">Proporzionale</span>
+                        <span class="stat-value" id="summaryProp">50%</span>
+                    </div>
+                    <div class="stat-card majoritarian-bg">
+                        <span class="stat-label">Maggioritario</span>
+                        <span class="stat-value" id="summaryMaj">50%</span>
+                    </div>
+                </div>
+                <div class="summary-info">
+                    <span id="partiesCount">0 partiti</span>, <span id="coalitionsCount">0 coalizioni</span>
+                </div>
+            </section>
+        </main>
+
+        <!-- Parties Section -->
+        <section class="panel parties-section">
+            <div class="section-header">
+                <h2>Gestione Partiti</h2>
+                <button class="btn btn-primary" onclick="addParty()">
+                    + Aggiungi Partito
+                </button>
+            </div>
+
+            <div class="parties-grid" id="partiesContainer">
+                <!-- Parties will be added here dynamically -->
+            </div>
+
+            <div id="shareWarning" class="warning hidden">
+                La somma delle percentuali dei partiti non può superare 100%
+            </div>
+        </section>
+
+        <!-- Coalitions Section -->
+        <section class="panel coalitions-section">
+            <div class="section-header">
+                <h2>Gestione Coalizioni</h2>
+                <button class="btn btn-secondary" onclick="addCoalition()">
+                    + Crea Coalizione
+                </button>
+            </div>
+
+            <p class="info-text">
+                Trascina i partiti nelle coalizioni per aggregarli.
+                I partiti non assegnati verranno calcolati singolarmente.
+            </p>
+
+            <div class="coalitions-container" id="coalitionsContainer">
+                <!-- Coalitions will be added here dynamically -->
+            </div>
+
+            <!-- Unassigned Parties Pool -->
+            <div class="unassigned-pool">
+                <h3>Partiti Non Assegnati</h3>
+                <div class="parties-pool" id="unassignedParties">
+                    <!-- Unassigned parties will appear here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Simulation Button and Results -->
+        <section class="panel simulation-section">
+            <div class="simulation-controls">
+                <button class="btn btn-simulate" onclick="runSimulation()" id="simulateBtn">
+                    Esegui Simulazione
+                </button>
+                <div class="spinner hidden" id="spinner"></div>
+            </div>
+
+            <div class="results-container hidden" id="resultsContainer">
+                <h2>Risultati Simulazione</h2>
+                <div class="results-grid" id="resultsGrid">
+                    <!-- Results will be added here -->
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
