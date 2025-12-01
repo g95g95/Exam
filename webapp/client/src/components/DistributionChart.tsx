@@ -5,9 +5,7 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  ReferenceLine,
 } from 'recharts';
 import type { SimulationResult } from '../types';
 

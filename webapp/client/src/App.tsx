@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import type { ElectionInfo, ElectionConfig, SimulationResult } from './types';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import type { ElectionInfo, ElectionConfig, SimulationResult, Party, Coalition } from './types';
 import { fetchElections, fetchElectionConfig, runSimulation } from './api';
 import { ElectionSelector } from './components/ElectionSelector';
 import { VoteSharesForm } from './components/VoteSharesForm';
@@ -8,6 +8,9 @@ import { ResultsDisplay } from './components/ResultsDisplay';
 import { DistributionChart } from './components/DistributionChart';
 import { ComparisonChart } from './components/ComparisonChart';
 import { JsonUploader } from './components/JsonUploader';
+import { ElectionConfigEditor } from './components/ElectionConfigEditor';
+import { PartyManager } from './components/PartyManager';
+import { CoalitionManager } from './components/CoalitionManager';
 
 function App() {
   // State
@@ -20,6 +23,16 @@ function App() {
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Custom election state for Generic Election
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const [customName, setCustomName] = useState('Elezione Personalizzata');
+  const [customSeats, setCustomSeats] = useState(400);
+  const [customPropPercent, setCustomPropPercent] = useState(50);
+  const [customMajPercent, setCustomMajPercent] = useState(50);
+  const [customParties, setCustomParties] = useState<Party[]>([]);
+  const [customCoalitions, setCustomCoalitions] = useState<Coalition[]>([]);
+  const [useCoalitions, setUseCoalitions] = useState(false);
 
   // Load elections on mount
   useEffect(() => {
@@ -37,9 +50,25 @@ function App() {
   useEffect(() => {
     if (!selectedElectionId) return;
 
+    // Check if Generic Election is selected
+    const isGeneric = selectedElectionId === 'generic-election';
+    setIsCustomMode(isGeneric);
+
     fetchElectionConfig(selectedElectionId)
       .then((config) => {
         setElectionConfig(config);
+
+        if (isGeneric) {
+          // Initialize custom state from the config
+          setCustomName(config.election.name);
+          setCustomSeats(config.election.seats);
+          setCustomPropPercent(Math.round(config.election.proportionalCoefficient * 100));
+          setCustomMajPercent(Math.round(config.election.majoritarianCoefficient * 100));
+          setCustomParties(config.parties);
+          setCustomCoalitions(config.coalitions);
+          setUseCoalitions(config.coalitions.length > 0);
+        }
+
         // Initialize vote shares from defaults
         if (config.defaultVoteShares) {
           setVoteShares(config.defaultVoteShares);
@@ -56,6 +85,88 @@ function App() {
       })
       .catch((err) => setError(err.message));
   }, [selectedElectionId]);
+
+  // Build effective config for custom mode
+  const effectiveConfig = useMemo((): ElectionConfig | null => {
+    if (!isCustomMode) return electionConfig;
+
+    // In custom mode, build config from custom state
+    if (customParties.length === 0) return null;
+
+    // Determine entities for vote allocation (coalitions or parties)
+    let effectiveCoalitions: Coalition[];
+
+    if (useCoalitions && customCoalitions.length > 0) {
+      // Use coalitions mode - only include coalitions that have parties assigned
+      effectiveCoalitions = customCoalitions.filter(c => c.parties.length > 0);
+
+      // Check for unassigned parties and create an "Others" coalition if needed
+      const assignedPartyIds = new Set(effectiveCoalitions.flatMap(c => c.parties));
+      const unassignedParties = customParties.filter(p => !assignedPartyIds.has(p.id));
+
+      if (unassignedParties.length > 0) {
+        effectiveCoalitions.push({
+          id: 'others',
+          name: 'Altri',
+          shortName: 'Altri',
+          color: '#9ca3af',
+          parties: unassignedParties.map(p => p.id),
+        });
+      }
+    } else {
+      // Party-only mode - each party becomes its own "coalition"
+      effectiveCoalitions = customParties.map(p => ({
+        id: p.id,
+        name: p.name,
+        shortName: p.shortName,
+        color: p.color,
+        parties: [p.id],
+      }));
+    }
+
+    if (effectiveCoalitions.length === 0) return null;
+
+    return {
+      election: {
+        name: customName,
+        seats: customSeats,
+        proportionalCoefficient: customPropPercent / 100,
+        majoritarianCoefficient: customMajPercent / 100,
+      },
+      coalitions: effectiveCoalitions,
+      parties: customParties,
+      defaultVoteShares: undefined,
+      realResults: null,
+    };
+  }, [isCustomMode, electionConfig, customName, customSeats, customPropPercent, customMajPercent, customParties, customCoalitions, useCoalitions]);
+
+  // Update vote shares when effective coalitions change in custom mode
+  useEffect(() => {
+    if (!isCustomMode || !effectiveConfig) return;
+
+    const newShares: Record<string, number> = {};
+    const equalShare = 1 / effectiveConfig.coalitions.length;
+
+    effectiveConfig.coalitions.forEach((c) => {
+      // Preserve existing share if available, otherwise use equal share
+      newShares[c.id] = voteShares[c.id] ?? equalShare;
+    });
+
+    // Normalize if total doesn't equal 1
+    const total = Object.values(newShares).reduce((a, b) => a + b, 0);
+    if (Math.abs(total - 1) > 0.001) {
+      Object.keys(newShares).forEach((key) => {
+        newShares[key] = newShares[key] / total;
+      });
+    }
+
+    // Only update if the keys have changed
+    const currentKeys = Object.keys(voteShares).sort().join(',');
+    const newKeys = Object.keys(newShares).sort().join(',');
+    if (currentKeys !== newKeys) {
+      setVoteShares(newShares);
+    }
+  }, [isCustomMode, effectiveConfig?.coalitions.length, effectiveConfig?.coalitions.map(c => c.id).join(',')]);
 
   // Handle vote share changes
   const handleVoteShareChange = useCallback((id: string, value: number) => {
@@ -79,7 +190,8 @@ function App() {
 
   // Run simulation
   const handleSimulate = useCallback(async () => {
-    if (!selectedElectionId || !electionConfig) return;
+    const configToUse = isCustomMode ? effectiveConfig : electionConfig;
+    if (!configToUse) return;
 
     setLoading(true);
     setError(null);
@@ -90,6 +202,7 @@ function App() {
         voteShares,
         iterations,
         seed,
+        customConfig: isCustomMode ? configToUse : undefined,
       });
       setResult(res);
     } catch (err) {
@@ -97,7 +210,7 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, [selectedElectionId, electionConfig, voteShares, iterations, seed]);
+  }, [selectedElectionId, isCustomMode, effectiveConfig, electionConfig, voteShares, iterations, seed]);
 
   // Handle custom config upload
   const handleConfigUpload = useCallback((config: ElectionConfig) => {
@@ -107,6 +220,8 @@ function App() {
     }
     setResult(null);
   }, []);
+
+  const displayConfig = isCustomMode ? effectiveConfig : electionConfig;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -152,16 +267,62 @@ function App() {
               />
             </div>
 
-            {/* JSON uploader */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Carica Configurazione JSON
-              </h2>
-              <JsonUploader onUpload={handleConfigUpload} />
-            </div>
+            {/* Custom election editor - only show for Generic Election */}
+            {isCustomMode && (
+              <>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Impostazioni Elezione
+                  </h2>
+                  <ElectionConfigEditor
+                    name={customName}
+                    seats={customSeats}
+                    proportionalPercent={customPropPercent}
+                    majoritarianPercent={customMajPercent}
+                    onNameChange={setCustomName}
+                    onSeatsChange={setCustomSeats}
+                    onProportionalChange={setCustomPropPercent}
+                    onMajoritarianChange={setCustomMajPercent}
+                  />
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Gestione Partiti
+                  </h2>
+                  <PartyManager
+                    parties={customParties}
+                    onPartiesChange={setCustomParties}
+                  />
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                    Gestione Coalizioni
+                  </h2>
+                  <CoalitionManager
+                    parties={customParties}
+                    coalitions={customCoalitions}
+                    useCoalitions={useCoalitions}
+                    onCoalitionsChange={setCustomCoalitions}
+                    onUseCoalitionsChange={setUseCoalitions}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* JSON uploader - only show when not in custom mode */}
+            {!isCustomMode && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Carica Configurazione JSON
+                </h2>
+                <JsonUploader onUpload={handleConfigUpload} />
+              </div>
+            )}
 
             {/* Vote shares form */}
-            {electionConfig && (
+            {displayConfig && displayConfig.coalitions.length > 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg font-semibold text-gray-900">
@@ -175,10 +336,18 @@ function App() {
                   </button>
                 </div>
                 <VoteSharesForm
-                  coalitions={electionConfig.coalitions}
+                  coalitions={displayConfig.coalitions}
                   voteShares={voteShares}
                   onChange={handleVoteShareChange}
                 />
+              </div>
+            )}
+
+            {/* Warning if no parties/coalitions in custom mode */}
+            {isCustomMode && customParties.length === 0 && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg">
+                <p className="font-medium">Attenzione</p>
+                <p className="text-sm">Aggiungi almeno un partito per eseguire la simulazione.</p>
               </div>
             )}
 
@@ -194,7 +363,7 @@ function App() {
                 onSeedChange={setSeed}
                 onSimulate={handleSimulate}
                 loading={loading}
-                disabled={!electionConfig}
+                disabled={!displayConfig || (isCustomMode && customParties.length === 0)}
               />
             </div>
           </div>
@@ -202,30 +371,41 @@ function App() {
           {/* Right column - Results */}
           <div className="lg:col-span-2 space-y-6">
             {/* Election info */}
-            {electionConfig && (
+            {displayConfig && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  {electionConfig.election.name}
+                  {displayConfig.election.name}
                 </h2>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div className="bg-gray-50 rounded-lg p-3">
                     <p className="text-gray-500">Seggi Totali</p>
                     <p className="text-2xl font-bold text-gray-900">
-                      {electionConfig.election.seats}
+                      {displayConfig.election.seats}
                     </p>
                   </div>
                   <div className="bg-blue-50 rounded-lg p-3">
                     <p className="text-blue-600">Proporzionale</p>
                     <p className="text-2xl font-bold text-blue-700">
-                      {Math.round(electionConfig.election.proportionalCoefficient * 100)}%
+                      {Math.round(displayConfig.election.proportionalCoefficient * 100)}%
                     </p>
                   </div>
                   <div className="bg-amber-50 rounded-lg p-3">
                     <p className="text-amber-600">Maggioritario</p>
                     <p className="text-2xl font-bold text-amber-700">
-                      {Math.round(electionConfig.election.majoritarianCoefficient * 100)}%
+                      {Math.round(displayConfig.election.majoritarianCoefficient * 100)}%
                     </p>
                   </div>
+                </div>
+                {/* Show parties/coalitions count */}
+                <div className="mt-4 pt-4 border-t border-gray-200 flex gap-4 text-sm text-gray-600">
+                  <span>
+                    <span className="font-medium">{displayConfig.parties.length}</span> partiti
+                  </span>
+                  {(useCoalitions || !isCustomMode) && (
+                    <span>
+                      <span className="font-medium">{displayConfig.coalitions.length}</span> {isCustomMode && !useCoalitions ? 'entità' : 'coalizioni'}
+                    </span>
+                  )}
                 </div>
               </div>
             )}
@@ -235,7 +415,7 @@ function App() {
               <>
                 <ResultsDisplay
                   result={result}
-                  totalSeats={electionConfig?.election.seats || 0}
+                  totalSeats={displayConfig?.election.seats || 0}
                 />
 
                 {/* Charts */}
@@ -279,7 +459,9 @@ function App() {
                   Nessuna simulazione eseguita
                 </h3>
                 <p className="text-gray-500">
-                  Configura i parametri e clicca su "Avvia Simulazione" per vedere i risultati
+                  {isCustomMode && customParties.length === 0
+                    ? 'Aggiungi dei partiti e configura i parametri per eseguire una simulazione'
+                    : 'Configura i parametri e clicca su "Avvia Simulazione" per vedere i risultati'}
                 </p>
               </div>
             )}

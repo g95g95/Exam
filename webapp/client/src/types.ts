@@ -59,4 +59,16 @@ export interface SimulationRequest {
   voteShares: Record<string, number>;
   iterations?: number;
   seed?: number;
+  customConfig?: ElectionConfig;
+}
+
+// For custom election editing
+export interface CustomElectionState {
+  name: string;
+  seats: number;
+  proportionalPercent: number;
+  majoritarianPercent: number;
+  parties: Party[];
+  coalitions: Coalition[];
+  useCoalitions: boolean;
 }
