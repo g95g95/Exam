@@ -144,29 +144,44 @@ function App() {
   useEffect(() => {
     if (!isCustomMode || !effectiveConfig) return;
 
-    const newShares: Record<string, number> = {};
-    const equalShare = 1 / effectiveConfig.coalitions.length;
+    setVoteShares(prevShares => {
+      const newShares: Record<string, number> = {};
+      const equalShare = 1 / effectiveConfig.coalitions.length;
 
-    effectiveConfig.coalitions.forEach((c) => {
-      // Preserve existing share if available, otherwise use equal share
-      newShares[c.id] = voteShares[c.id] ?? equalShare;
-    });
-
-    // Normalize if total doesn't equal 1
-    const total = Object.values(newShares).reduce((a, b) => a + b, 0);
-    if (Math.abs(total - 1) > 0.001) {
-      Object.keys(newShares).forEach((key) => {
-        newShares[key] = newShares[key] / total;
+      // Keep existing shares for coalitions that still exist
+      effectiveConfig.coalitions.forEach((c) => {
+        if (c.id in prevShares) {
+          newShares[c.id] = prevShares[c.id];
+        } else {
+          // New coalition gets equal share
+          newShares[c.id] = equalShare;
+        }
       });
-    }
 
-    // Only update if the keys have changed
-    const currentKeys = Object.keys(voteShares).sort().join(',');
-    const newKeys = Object.keys(newShares).sort().join(',');
-    if (currentKeys !== newKeys) {
-      setVoteShares(newShares);
-    }
-  }, [isCustomMode, effectiveConfig?.coalitions.length, effectiveConfig?.coalitions.map(c => c.id).join(',')]);
+      // Check if keys actually changed
+      const currentKeys = Object.keys(prevShares).sort().join(',');
+      const newKeys = Object.keys(newShares).sort().join(',');
+
+      if (currentKeys === newKeys) {
+        return prevShares; // No change needed
+      }
+
+      // Normalize only for new coalitions (redistribute remaining)
+      const existingTotal = Object.entries(newShares)
+        .filter(([id]) => id in prevShares)
+        .reduce((sum, [, val]) => sum + val, 0);
+
+      const newCoalitions = effectiveConfig.coalitions.filter(c => !(c.id in prevShares));
+      if (newCoalitions.length > 0 && existingTotal < 1) {
+        const remainingShare = (1 - existingTotal) / newCoalitions.length;
+        newCoalitions.forEach(c => {
+          newShares[c.id] = remainingShare;
+        });
+      }
+
+      return newShares;
+    });
+  }, [isCustomMode, effectiveConfig?.coalitions.map(c => c.id).join(',')]);
 
   // Handle vote share changes
   const handleVoteShareChange = useCallback((id: string, value: number) => {
@@ -321,28 +336,6 @@ function App() {
               </div>
             )}
 
-            {/* Vote shares form */}
-            {displayConfig && displayConfig.coalitions.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Quote di Voto (%)
-                  </h2>
-                  <button
-                    onClick={normalizeShares}
-                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                  >
-                    Normalizza
-                  </button>
-                </div>
-                <VoteSharesForm
-                  coalitions={displayConfig.coalitions}
-                  voteShares={voteShares}
-                  onChange={handleVoteShareChange}
-                />
-              </div>
-            )}
-
             {/* Warning if no parties/coalitions in custom mode */}
             {isCustomMode && customParties.length === 0 && (
               <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg">
@@ -350,62 +343,90 @@ function App() {
                 <p className="text-sm">Aggiungi almeno un partito per eseguire la simulazione.</p>
               </div>
             )}
-
-            {/* Simulation controls */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Parametri Simulazione
-              </h2>
-              <SimulationControls
-                iterations={iterations}
-                seed={seed}
-                onIterationsChange={setIterations}
-                onSeedChange={setSeed}
-                onSimulate={handleSimulate}
-                loading={loading}
-                disabled={!displayConfig || (isCustomMode && customParties.length === 0)}
-              />
-            </div>
           </div>
 
           {/* Right column - Results */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Election info */}
+            {/* Election info + Vote shares + Simulation controls in grid */}
             {displayConfig && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  {displayConfig.election.name}
-                </h2>
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-gray-500">Seggi Totali</p>
-                    <p className="text-2xl font-bold text-gray-900">
-                      {displayConfig.election.seats}
-                    </p>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {/* Left side - Election info */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                    {displayConfig.election.name}
+                  </h2>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div className="bg-gray-50 rounded-lg p-3">
+                      <p className="text-gray-500">Seggi Totali</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {displayConfig.election.seats}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-3">
+                      <p className="text-blue-600">Proporzionale</p>
+                      <p className="text-2xl font-bold text-blue-700">
+                        {Math.round(displayConfig.election.proportionalCoefficient * 100)}%
+                      </p>
+                    </div>
+                    <div className="bg-amber-50 rounded-lg p-3">
+                      <p className="text-amber-600">Maggioritario</p>
+                      <p className="text-2xl font-bold text-amber-700">
+                        {Math.round(displayConfig.election.majoritarianCoefficient * 100)}%
+                      </p>
+                    </div>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-3">
-                    <p className="text-blue-600">Proporzionale</p>
-                    <p className="text-2xl font-bold text-blue-700">
-                      {Math.round(displayConfig.election.proportionalCoefficient * 100)}%
-                    </p>
-                  </div>
-                  <div className="bg-amber-50 rounded-lg p-3">
-                    <p className="text-amber-600">Maggioritario</p>
-                    <p className="text-2xl font-bold text-amber-700">
-                      {Math.round(displayConfig.election.majoritarianCoefficient * 100)}%
-                    </p>
+                  {/* Show parties/coalitions count */}
+                  <div className="mt-4 pt-4 border-t border-gray-200 flex gap-4 text-sm text-gray-600">
+                    <span>
+                      <span className="font-medium">{displayConfig.parties.length}</span> partiti
+                    </span>
+                    {(useCoalitions || !isCustomMode) && (
+                      <span>
+                        <span className="font-medium">{displayConfig.coalitions.length}</span> {isCustomMode && !useCoalitions ? 'entità' : 'coalizioni'}
+                      </span>
+                    )}
                   </div>
                 </div>
-                {/* Show parties/coalitions count */}
-                <div className="mt-4 pt-4 border-t border-gray-200 flex gap-4 text-sm text-gray-600">
-                  <span>
-                    <span className="font-medium">{displayConfig.parties.length}</span> partiti
-                  </span>
-                  {(useCoalitions || !isCustomMode) && (
-                    <span>
-                      <span className="font-medium">{displayConfig.coalitions.length}</span> {isCustomMode && !useCoalitions ? 'entità' : 'coalizioni'}
-                    </span>
+
+                {/* Right side - Vote shares and Simulation controls */}
+                <div className="space-y-6">
+                  {/* Vote shares form */}
+                  {displayConfig.coalitions.length > 0 && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                      <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-lg font-semibold text-gray-900">
+                          Quote di Voto (%)
+                        </h2>
+                        <button
+                          onClick={normalizeShares}
+                          className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                        >
+                          Normalizza
+                        </button>
+                      </div>
+                      <VoteSharesForm
+                        coalitions={displayConfig.coalitions}
+                        voteShares={voteShares}
+                        onChange={handleVoteShareChange}
+                      />
+                    </div>
                   )}
+
+                  {/* Simulation controls */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                      Parametri Simulazione
+                    </h2>
+                    <SimulationControls
+                      iterations={iterations}
+                      seed={seed}
+                      onIterationsChange={setIterations}
+                      onSeedChange={setSeed}
+                      onSimulate={handleSimulate}
+                      loading={loading}
+                      disabled={!displayConfig || (isCustomMode && customParties.length === 0)}
+                    />
+                  </div>
                 </div>
               </div>
             )}
