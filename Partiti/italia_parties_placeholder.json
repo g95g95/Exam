@@ -1,0 +1,72 @@
+{
+  "name": "Elezioni Italiane 2024",
+  "description": "Partiti politici italiani con simboli",
+  "parties": [
+    {
+      "name": "Fratelli d'Italia",
+      "abbr": "FdI",
+      "color": "#003893",
+      "share": 28.0,
+      "image": "/static/partiti/fdi.png"
+    },
+    {
+      "name": "Partito Democratico",
+      "abbr": "PD",
+      "color": "#E2001A",
+      "share": 22.0,
+      "image": "/static/partiti/pd.png"
+    },
+    {
+      "name": "Movimento 5 Stelle",
+      "abbr": "M5S",
+      "color": "#FFEB3B",
+      "share": 15.0,
+      "image": "/static/partiti/m5s.png"
+    },
+    {
+      "name": "Lega",
+      "abbr": "Lega",
+      "color": "#008000",
+      "share": 9.0,
+      "image": "/static/partiti/lega.png"
+    },
+    {
+      "name": "Forza Italia",
+      "abbr": "FI",
+      "color": "#0087DC",
+      "share": 8.0,
+      "image": "/static/partiti/fi.png"
+    },
+    {
+      "name": "Alleanza Verdi e Sinistra",
+      "abbr": "AVS",
+      "color": "#6DBE45",
+      "share": 4.0,
+      "image": "/static/partiti/avs.png"
+    },
+    {
+      "name": "Azione - Italia Viva",
+      "abbr": "A-IV",
+      "color": "#FF6700",
+      "share": 5.0,
+      "image": "/static/partiti/azione.png"
+    },
+    {
+      "name": "Noi Moderati",
+      "abbr": "NM",
+      "color": "#1E90FF",
+      "share": 1.5,
+      "image": "/static/partiti/nm.png"
+    }
+  ],
+  "coalitions": [
+    {
+      "name": "Centro-destra",
+      "parties": ["Fratelli d'Italia", "Lega", "Forza Italia", "Noi Moderati"]
+    },
+    {
+      "name": "Centro-sinistra",
+      "parties": ["Partito Democratico", "Alleanza Verdi e Sinistra"]
+    }
+  ]
+}
