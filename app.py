@@ -133,6 +133,30 @@ def simulate():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/parties-templates')
+def get_parties_templates():
+    """Get list of available party template files."""
+    partiti_dir = os.path.join(os.path.dirname(__file__), 'Partiti')
+    templates = []
+    if os.path.exists(partiti_dir):
+        for f in os.listdir(partiti_dir):
+            if f.endswith('.json'):
+                templates.append(f)
+    return jsonify({'templates': templates})
+
+
+@app.route('/api/parties-template/<filename>')
+def get_parties_template(filename):
+    """Get a specific party template JSON file."""
+    partiti_dir = os.path.join(os.path.dirname(__file__), 'Partiti')
+    if not filename.endswith('.json'):
+        return jsonify({'error': 'Invalid file type'}), 400
+    filepath = os.path.join(partiti_dir, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'error': 'Template not found'}), 404
+    return send_from_directory(partiti_dir, filename)
+
+
 @app.route('/api/validate', methods=['POST'])
 def validate():
     """Validate election configuration without running simulation."""

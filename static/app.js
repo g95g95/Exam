@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeDefaultParties();
     updateSummary();
     setupDragAndDrop();
+    loadPartyTemplatesList();
 });
 
 /**
@@ -36,7 +37,7 @@ function initializeDefaultParties() {
 /**
  * Add a new party
  */
-function addParty(name = null, share = 10) {
+function addParty(name = null, share = 10, color = null, image = null) {
     const id = ++state.partyIdCounter;
     const partyName = name || `Partito ${id}`;
     const colorIndex = (id - 1) % state.partyColors.length;
@@ -45,7 +46,8 @@ function addParty(name = null, share = 10) {
         id,
         name: partyName,
         share: share,
-        color: state.partyColors[colorIndex],
+        color: color || state.partyColors[colorIndex],
+        image: image || null,
         coalitionId: null
     };
 
@@ -104,6 +106,19 @@ function updatePartyShare(id, share) {
 }
 
 /**
+ * Generate party indicator HTML (image or color)
+ */
+function getPartyIndicatorHtml(party, size = 'normal') {
+    const sizeClass = size === 'small' ? 'party-color-indicator-small' : 'party-color-indicator';
+    if (party.image) {
+        return `<span class="${sizeClass} party-image-indicator" style="background-color: ${party.color}">
+            <img src="${party.image}" alt="${party.name}" onerror="this.style.display='none'">
+        </span>`;
+    }
+    return `<span class="${sizeClass}" style="background-color: ${party.color}"></span>`;
+}
+
+/**
  * Render all party cards
  */
 function renderParties() {
@@ -115,7 +130,7 @@ function renderParties() {
         card.className = 'party-card';
         card.innerHTML = `
             <div class="party-card-header">
-                <span class="party-color-indicator" style="background-color: ${party.color}"></span>
+                ${getPartyIndicatorHtml(party)}
                 <input type="text" class="party-name-input" value="${party.name}"
                        onchange="updatePartyName(${party.id}, this.value)"
                        placeholder="Nome partito">
@@ -287,7 +302,7 @@ function renderCoalitions() {
                         if (!party) return '';
                         return `
                             <span class="coalition-party-tag" draggable="true" data-party-id="${party.id}">
-                                <span class="party-color-indicator" style="background-color: ${party.color}"></span>
+                                ${getPartyIndicatorHtml(party, 'small')}
                                 ${party.name} (${party.share}%)
                                 <button class="remove-from-coalition" onclick="removePartyFromCoalition(${party.id})">&times;</button>
                             </span>
@@ -325,7 +340,7 @@ function updateUnassignedPartiesPool() {
         tag.draggable = true;
         tag.dataset.partyId = party.id;
         tag.innerHTML = `
-            <span class="party-color-indicator" style="background-color: ${party.color}"></span>
+            ${getPartyIndicatorHtml(party, 'small')}
             ${party.name}
             <span class="party-share-badge">${party.share}%</span>
         `;
@@ -664,3 +679,83 @@ function displayResults(result) {
 
 // Update election name in summary when changed
 document.getElementById('electionName')?.addEventListener('input', updateSummary);
+
+/**
+ * Load available party templates list
+ */
+async function loadPartyTemplatesList() {
+    try {
+        const response = await fetch('/api/parties-templates');
+        const data = await response.json();
+
+        const select = document.getElementById('partyTemplateSelect');
+        select.innerHTML = '<option value="">-- Carica Template --</option>';
+
+        data.templates.forEach(template => {
+            const option = document.createElement('option');
+            option.value = template;
+            option.textContent = template.replace('.json', '').replace(/_/g, ' ');
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading templates:', error);
+    }
+}
+
+/**
+ * Load parties from selected template
+ */
+async function loadPartyTemplate() {
+    const select = document.getElementById('partyTemplateSelect');
+    const filename = select.value;
+
+    if (!filename) {
+        alert('Seleziona un template');
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/parties-template/${filename}`);
+        const data = await response.json();
+
+        // Reset current state
+        state.parties = [];
+        state.coalitions = [];
+        state.partyIdCounter = 0;
+        state.coalitionIdCounter = 0;
+
+        // Update election name if provided
+        if (data.name) {
+            document.getElementById('electionName').value = data.name;
+        }
+
+        // Add parties from template
+        if (data.parties) {
+            data.parties.forEach(p => {
+                addParty(p.name, p.share, p.color, p.image);
+            });
+        }
+
+        // Add coalitions from template
+        if (data.coalitions) {
+            data.coalitions.forEach(c => {
+                addCoalition(c.name);
+                const coalition = state.coalitions.find(co => co.name === c.name);
+                if (coalition && c.parties) {
+                    c.parties.forEach(partyName => {
+                        const party = state.parties.find(p => p.name === partyName);
+                        if (party) {
+                            addPartyToCoalition(party.id, coalition.id);
+                        }
+                    });
+                }
+            });
+        }
+
+        updateSummary();
+
+    } catch (error) {
+        console.error('Error loading template:', error);
+        alert('Errore nel caricamento del template');
+    }
+}
