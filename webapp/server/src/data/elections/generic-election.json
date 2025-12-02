@@ -41,43 +41,57 @@
       "id": "party-a1",
       "name": "Party A1",
       "shortName": "A1",
-      "color": "#3b82f6"
+      "color": "#3b82f6",
+      "territorialita": false
     },
     {
       "id": "party-a2",
       "name": "Party A2",
       "shortName": "A2",
-      "color": "#60a5fa"
+      "color": "#60a5fa",
+      "territorialita": false
     },
     {
       "id": "party-b1",
       "name": "Party B1",
       "shortName": "B1",
-      "color": "#ef4444"
+      "color": "#ef4444",
+      "territorialita": false
     },
     {
       "id": "party-b2",
       "name": "Party B2",
       "shortName": "B2",
-      "color": "#f87171"
+      "color": "#f87171",
+      "territorialita": true
     },
     {
       "id": "party-c1",
       "name": "Party C1",
       "shortName": "C1",
-      "color": "#22c55e"
+      "color": "#22c55e",
+      "territorialita": false
     },
     {
       "id": "others",
       "name": "Others",
       "shortName": "Oth",
-      "color": "#9ca3af"
+      "color": "#9ca3af",
+      "territorialita": false
     }
   ],
   "defaultVoteShares": {
     "coalition-a": 0.35,
     "coalition-b": 0.30,
     "coalition-c": 0.25,
+    "others": 0.10
+  },
+  "defaultPartyVoteShares": {
+    "party-a1": 0.20,
+    "party-a2": 0.15,
+    "party-b1": 0.18,
+    "party-b2": 0.12,
+    "party-c1": 0.25,
     "others": 0.10
   },
   "realResults": null

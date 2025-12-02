@@ -41,61 +41,71 @@
       "id": "m5s",
       "name": "Movimento 5 Stelle",
       "shortName": "M5S",
-      "color": "#f5d000"
+      "color": "#f5d000",
+      "territorialita": false
     },
     {
       "id": "lega",
       "name": "Lega",
       "shortName": "Lega",
-      "color": "#008c45"
+      "color": "#008c45",
+      "territorialita": true
     },
     {
       "id": "fi",
       "name": "Forza Italia",
       "shortName": "FI",
-      "color": "#0066cc"
+      "color": "#0066cc",
+      "territorialita": false
     },
     {
       "id": "fdi",
       "name": "Fratelli d'Italia",
       "shortName": "FdI",
-      "color": "#003366"
+      "color": "#003366",
+      "territorialita": false
     },
     {
       "id": "nci",
       "name": "Noi con l'Italia",
       "shortName": "NcI",
-      "color": "#4169e1"
+      "color": "#4169e1",
+      "territorialita": false
     },
     {
       "id": "pd",
       "name": "Partito Democratico",
       "shortName": "PD",
-      "color": "#cc0000"
+      "color": "#cc0000",
+      "territorialita": false
     },
     {
       "id": "piu-europa",
       "name": "+Europa",
       "shortName": "+Eu",
-      "color": "#ff6600"
+      "color": "#ff6600",
+      "territorialita": false
     },
     {
       "id": "insieme",
       "name": "Insieme",
       "shortName": "Ins",
-      "color": "#ff9999"
+      "color": "#ff9999",
+      "territorialita": false
     },
     {
       "id": "svp",
       "name": "SVP",
       "shortName": "SVP",
-      "color": "#006400"
+      "color": "#006400",
+      "territorialita": true
     },
     {
       "id": "leu",
       "name": "Liberi e Uguali",
       "shortName": "LeU",
-      "color": "#8b0000"
+      "color": "#8b0000",
+      "territorialita": false
     }
   ],
   "defaultVoteShares": {
@@ -103,6 +113,18 @@
     "cdx": 0.375,
     "csx": 0.22,
     "leu": 0.03
+  },
+  "defaultPartyVoteShares": {
+    "m5s": 0.327,
+    "lega": 0.173,
+    "fi": 0.14,
+    "fdi": 0.044,
+    "nci": 0.018,
+    "pd": 0.187,
+    "piu-europa": 0.025,
+    "insieme": 0.006,
+    "svp": 0.002,
+    "leu": 0.034
   },
   "realResults": {
     "m5s": 221,

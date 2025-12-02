@@ -10,6 +10,7 @@ export interface Party {
   name: string;
   shortName: string;
   color: string;
+  territorialita?: boolean; // Flag per partiti piu forti in regioni specifiche
 }
 
 /**
@@ -19,6 +20,7 @@ export interface ElectionData {
   name: string;
   parties: string[];
   proportionalShares: number[];
+  majoritarianShares: number[]; // Quote per il maggioritario (possono differire per territorialita)
   proportionalCoefficient: number;
   majoritarianCoefficient: number;
   seats: number;
@@ -55,6 +57,8 @@ export interface ElectionConfig {
 export interface SimulationInput {
   config: ElectionConfig;
   voteShares: Record<string, number>; // coalitionId -> share (0-1)
+  partyVoteShares?: Record<string, number>; // partyId -> share (0-1)
+  partyTerritorialita?: Record<string, boolean>; // partyId -> territorialita flag
 }
 
 /**

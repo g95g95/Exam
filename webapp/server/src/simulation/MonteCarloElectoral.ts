@@ -50,6 +50,10 @@ function validateElectionData(data: ElectionData): void {
     throw new Error('Each party must have a corresponding share value');
   }
 
+  if (data.parties.length !== data.majoritarianShares.length) {
+    throw new Error('Each party must have a corresponding majoritarian share value');
+  }
+
   const uniqueParties = new Set(data.parties);
   if (uniqueParties.size !== data.parties.length) {
     throw new Error('Each party must have a unique name');
@@ -57,6 +61,10 @@ function validateElectionData(data: ElectionData): void {
 
   if (data.proportionalShares.some((share) => share < 0)) {
     throw new Error('Vote shares cannot contain negative values');
+  }
+
+  if (data.majoritarianShares.some((share) => share < 0)) {
+    throw new Error('Majoritarian shares cannot contain negative values');
   }
 
   if (data.proportionalCoefficient < 0 || data.proportionalCoefficient > 1) {
@@ -205,9 +213,11 @@ function simulateSingleDraw(rng: SeededRandom, data: ElectionData): number[] {
     proportionalTotal
   );
 
+  // Usa le majoritarianShares per l'allocazione maggioritaria
+  // (queste includono la correzione del 20% per i partiti con territorialita)
   const majoritarianSeats = allocateMajoritarianSeats(
     rng,
-    data.proportionalShares,
+    data.majoritarianShares,
     majoritarianTotal
   );
 
@@ -246,6 +256,33 @@ function calculateStatistics(values: number[]): {
 }
 
 /**
+ * Calcola le quote maggioritarie applicando la correzione del 20% per territorialita
+ * @param shares - Quote proporzionali
+ * @param territorialita - Array di flag territorialita
+ * @returns Quote maggioritarie normalizzate
+ */
+function calculateMajoritarianShares(
+  shares: number[],
+  territorialita: boolean[]
+): number[] {
+  // Applica la correzione del 20% per i partiti con territorialita attiva
+  const adjustedShares = shares.map((share, i) => {
+    if (territorialita[i]) {
+      // Aumenta del 20% la quota maggioritaria
+      return share * 1.2;
+    }
+    return share;
+  });
+
+  // Normalizza per assicurarsi che la somma sia <= 1
+  const total = adjustedShares.reduce((a, b) => a + b, 0);
+  if (total > 0) {
+    return adjustedShares.map((s) => s / total);
+  }
+  return adjustedShares;
+}
+
+/**
  * Main Monte Carlo Electoral Simulator class
  */
 export class MonteCarloElectoral {
@@ -258,6 +295,7 @@ export class MonteCarloElectoral {
       name: '',
       parties: [],
       proportionalShares: [],
+      majoritarianShares: [],
       proportionalCoefficient: 0.61,
       majoritarianCoefficient: 0.37,
       seats: 630,
@@ -270,14 +308,44 @@ export class MonteCarloElectoral {
    * Load election data from configuration
    */
   loadFromConfig(input: SimulationInput): void {
-    const { config, voteShares } = input;
+    const { config, voteShares, partyVoteShares, partyTerritorialita } = input;
     const coalitionIds = config.coalitions.map((c) => c.id);
     const shares = coalitionIds.map((id) => voteShares[id] ?? 0);
+
+    // Calcola le quote maggioritarie per coalizione
+    // Se abbiamo i dati per partito, usa quelli per calcolare la correzione territorialita
+    let majoritarianShares: number[];
+
+    if (partyVoteShares && partyTerritorialita) {
+      // Calcola le quote maggioritarie dai partiti con territorialita
+      const coalitionMajShares: Record<string, number> = {};
+
+      config.coalitions.forEach((coalition) => {
+        let coalitionMajShare = 0;
+        coalition.parties.forEach((partyId) => {
+          const partyShare = partyVoteShares[partyId] ?? 0;
+          const hasTerritorialita = partyTerritorialita[partyId] ?? false;
+          // Applica +20% se ha territorialita
+          coalitionMajShare += hasTerritorialita ? partyShare * 1.2 : partyShare;
+        });
+        coalitionMajShares[coalition.id] = coalitionMajShare;
+      });
+
+      // Normalizza le quote maggioritarie
+      const totalMaj = Object.values(coalitionMajShares).reduce((a, b) => a + b, 0);
+      majoritarianShares = coalitionIds.map((id) =>
+        totalMaj > 0 ? (coalitionMajShares[id] ?? 0) / totalMaj : 0
+      );
+    } else {
+      // Se non abbiamo i dati per partito, usa le quote proporzionali
+      majoritarianShares = [...shares];
+    }
 
     this.data = {
       name: config.election.name,
       parties: coalitionIds,
       proportionalShares: shares,
+      majoritarianShares,
       proportionalCoefficient: config.election.proportionalCoefficient,
       majoritarianCoefficient: config.election.majoritarianCoefficient,
       seats: config.election.seats,
@@ -291,6 +359,10 @@ export class MonteCarloElectoral {
    */
   loadData(data: ElectionData): void {
     this.data = { ...data };
+    // Se majoritarianShares non e' definito, usa proportionalShares
+    if (!this.data.majoritarianShares || this.data.majoritarianShares.length === 0) {
+      this.data.majoritarianShares = [...this.data.proportionalShares];
+    }
     validateElectionData(this.data);
   }
 
