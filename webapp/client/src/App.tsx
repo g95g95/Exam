@@ -282,48 +282,23 @@ function App() {
               />
             </div>
 
-            {/* Custom election editor - only show for Generic Election */}
+            {/* Custom election settings - only show for Generic Election */}
             {isCustomMode && (
-              <>
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Impostazioni Elezione
-                  </h2>
-                  <ElectionConfigEditor
-                    name={customName}
-                    seats={customSeats}
-                    proportionalPercent={customPropPercent}
-                    majoritarianPercent={customMajPercent}
-                    onNameChange={setCustomName}
-                    onSeatsChange={setCustomSeats}
-                    onProportionalChange={setCustomPropPercent}
-                    onMajoritarianChange={setCustomMajPercent}
-                  />
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Gestione Partiti
-                  </h2>
-                  <PartyManager
-                    parties={customParties}
-                    onPartiesChange={setCustomParties}
-                  />
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                    Gestione Coalizioni
-                  </h2>
-                  <CoalitionManager
-                    parties={customParties}
-                    coalitions={customCoalitions}
-                    useCoalitions={useCoalitions}
-                    onCoalitionsChange={setCustomCoalitions}
-                    onUseCoalitionsChange={setUseCoalitions}
-                  />
-                </div>
-              </>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Impostazioni Elezione
+                </h2>
+                <ElectionConfigEditor
+                  name={customName}
+                  seats={customSeats}
+                  proportionalPercent={customPropPercent}
+                  majoritarianPercent={customMajPercent}
+                  onNameChange={setCustomName}
+                  onSeatsChange={setCustomSeats}
+                  onProportionalChange={setCustomPropPercent}
+                  onMajoritarianChange={setCustomMajPercent}
+                />
+              </div>
             )}
 
             {/* JSON uploader - only show when not in custom mode */}
@@ -501,6 +476,34 @@ function App() {
             )}
           </div>
         </div>
+
+        {/* Party and Coalition managers - full width section for custom mode */}
+        {isCustomMode && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Gestione Partiti
+              </h2>
+              <PartyManager
+                parties={customParties}
+                onPartiesChange={setCustomParties}
+              />
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Gestione Coalizioni
+              </h2>
+              <CoalitionManager
+                parties={customParties}
+                coalitions={customCoalitions}
+                useCoalitions={useCoalitions}
+                onCoalitionsChange={setCustomCoalitions}
+                onUseCoalitionsChange={setUseCoalitions}
+              />
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
