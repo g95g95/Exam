@@ -6,23 +6,32 @@
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: light dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Light mode defaults */
 body {
-  @apply bg-gray-50 text-gray-900;
+  @apply bg-gray-50 text-gray-900 transition-colors duration-200;
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
 }
 
-/* Custom slider styles */
+/* Dark mode body */
+body.dark {
+  @apply bg-gray-900 text-gray-100;
+}
+
+/* Custom slider styles - Light mode */
 input[type="range"] {
   @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+}
+
+.dark input[type="range"] {
+  @apply bg-gray-700;
 }
 
 input[type="range"]::-webkit-slider-thumb {
@@ -32,6 +41,20 @@ input[type="range"]::-webkit-slider-thumb {
 
 input[type="range"]::-moz-range-thumb {
   @apply w-4 h-4 bg-primary-600 rounded-full cursor-pointer border-none;
+}
+
+/* Text input styles - Light mode with good contrast */
+input[type="number"],
+input[type="text"] {
+  @apply bg-white text-gray-900 border-gray-300 placeholder-gray-400;
+  @apply focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+}
+
+/* Text input styles - Dark mode with good contrast */
+.dark input[type="number"],
+.dark input[type="text"] {
+  @apply bg-gray-800 text-white border-gray-600 placeholder-gray-400;
+  @apply focus:ring-primary-400 focus:border-primary-400;
 }
 
 /* Animation for loading */
@@ -48,7 +71,7 @@ input[type="range"]::-moz-range-thumb {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Light mode */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -64,4 +87,105 @@ input[type="range"]::-moz-range-thumb {
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400;
+}
+
+/* Custom scrollbar - Dark mode */
+.dark ::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-gray-600;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-500;
+}
+
+/* Card/panel styles for dark mode */
+.dark .bg-white {
+  @apply bg-gray-800;
+}
+
+.dark .bg-gray-50 {
+  @apply bg-gray-900;
+}
+
+.dark .border-gray-200 {
+  @apply border-gray-700;
+}
+
+.dark .border-gray-300 {
+  @apply border-gray-600;
+}
+
+.dark .text-gray-900 {
+  @apply text-gray-100;
+}
+
+.dark .text-gray-700 {
+  @apply text-gray-300;
+}
+
+.dark .text-gray-600 {
+  @apply text-gray-400;
+}
+
+.dark .text-gray-500 {
+  @apply text-gray-400;
+}
+
+/* Gradient background for dark mode */
+.dark .from-gray-50 {
+  --tw-gradient-from: #111827;
+}
+
+.dark .to-gray-100 {
+  --tw-gradient-to: #1f2937;
+}
+
+/* Info boxes dark mode */
+.dark .bg-blue-50 {
+  @apply bg-blue-900/30;
+}
+
+.dark .bg-amber-50 {
+  @apply bg-amber-900/30;
+}
+
+.dark .bg-red-50 {
+  @apply bg-red-900/30;
+}
+
+.dark .bg-green-50 {
+  @apply bg-green-900/30;
+}
+
+.dark .text-blue-600 {
+  @apply text-blue-400;
+}
+
+.dark .text-blue-700 {
+  @apply text-blue-300;
+}
+
+.dark .text-amber-600 {
+  @apply text-amber-400;
+}
+
+.dark .text-amber-700 {
+  @apply text-amber-300;
+}
+
+.dark .text-red-700 {
+  @apply text-red-400;
+}
+
+.dark .text-green-600 {
+  @apply text-green-400;
+}
+
+/* Shadow adjustments for dark mode */
+.dark .shadow-sm {
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.3);
 }

@@ -7,6 +7,8 @@ export interface Party {
   name: string;
   shortName: string;
   color: string;
+  territorialita?: boolean; // Flag per partiti piu forti in regioni specifiche
+  coalitionId?: string; // ID della coalizione di appartenenza
 }
 
 export interface Coalition {
@@ -34,7 +36,8 @@ export interface ElectionConfig {
   };
   coalitions: Coalition[];
   parties: Party[];
-  defaultVoteShares?: Record<string, number>;
+  defaultVoteShares?: Record<string, number>; // Coalition vote shares
+  defaultPartyVoteShares?: Record<string, number>; // Party vote shares
   realResults?: Record<string, number> | null;
 }
 
@@ -56,7 +59,9 @@ export interface SimulationResult {
 
 export interface SimulationRequest {
   electionId: string;
-  voteShares: Record<string, number>;
+  voteShares: Record<string, number>; // Coalition vote shares (calcolate da party shares)
+  partyVoteShares: Record<string, number>; // Party vote shares (input utente)
+  partyTerritorialita: Record<string, boolean>; // Flag territorialita per partito
   iterations?: number;
   seed?: number;
   customConfig?: ElectionConfig;

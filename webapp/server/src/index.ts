@@ -79,12 +79,16 @@ app.post('/api/simulate', async (req, res) => {
     const {
       electionId,
       voteShares,
+      partyVoteShares,
+      partyTerritorialita,
       iterations = 1000,
       seed,
       customConfig,
     } = req.body as {
       electionId: string;
       voteShares: Record<string, number>;
+      partyVoteShares?: Record<string, number>;
+      partyTerritorialita?: Record<string, boolean>;
       iterations?: number;
       seed?: number;
       customConfig?: ElectionConfig;
@@ -123,6 +127,8 @@ app.post('/api/simulate', async (req, res) => {
     const input: SimulationInput = {
       config,
       voteShares,
+      partyVoteShares,
+      partyTerritorialita,
     };
 
     simulator.loadFromConfig(input);

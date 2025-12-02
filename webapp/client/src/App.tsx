@@ -11,13 +11,15 @@ import { JsonUploader } from './components/JsonUploader';
 import { ElectionConfigEditor } from './components/ElectionConfigEditor';
 import { PartyManager } from './components/PartyManager';
 import { CoalitionManager } from './components/CoalitionManager';
+import { ThemeToggle } from './components/ThemeToggle';
 
 function App() {
   // State
   const [elections, setElections] = useState<ElectionInfo[]>([]);
   const [selectedElectionId, setSelectedElectionId] = useState<string>('');
   const [electionConfig, setElectionConfig] = useState<ElectionConfig | null>(null);
-  const [voteShares, setVoteShares] = useState<Record<string, number>>({});
+  const [partyVoteShares, setPartyVoteShares] = useState<Record<string, number>>({});
+  const [territorialita, setTerritorialita] = useState<Record<string, boolean>>({});
   const [iterations, setIterations] = useState(1000);
   const [seed, setSeed] = useState<number | undefined>(undefined);
   const [result, setResult] = useState<SimulationResult | null>(null);
@@ -33,6 +35,21 @@ function App() {
   const [customParties, setCustomParties] = useState<Party[]>([]);
   const [customCoalitions, setCustomCoalitions] = useState<Coalition[]>([]);
   const [useCoalitions, setUseCoalitions] = useState(false);
+
+  // Calcola le coalition vote shares dai party vote shares
+  const calculateCoalitionShares = useCallback((
+    config: ElectionConfig,
+    partyShares: Record<string, number>
+  ): Record<string, number> => {
+    const coalitionShares: Record<string, number> = {};
+    config.coalitions.forEach((coalition) => {
+      coalitionShares[coalition.id] = coalition.parties.reduce(
+        (sum, partyId) => sum + (partyShares[partyId] || 0),
+        0
+      );
+    });
+    return coalitionShares;
+  }, []);
 
   // Load elections on mount
   useEffect(() => {
@@ -69,18 +86,35 @@ function App() {
           setUseCoalitions(config.coalitions.length > 0);
         }
 
-        // Initialize vote shares from defaults
-        if (config.defaultVoteShares) {
-          setVoteShares(config.defaultVoteShares);
-        } else {
-          // Create equal shares
-          const equalShare = 1 / config.coalitions.length;
-          const shares: Record<string, number> = {};
-          config.coalitions.forEach((c) => {
-            shares[c.id] = equalShare;
+        // Initialize party vote shares
+        if (config.defaultPartyVoteShares) {
+          setPartyVoteShares(config.defaultPartyVoteShares);
+        } else if (config.defaultVoteShares) {
+          // Distribuisci le coalition shares equamente tra i partiti
+          const partyShares: Record<string, number> = {};
+          config.coalitions.forEach((coalition) => {
+            const coalitionShare = config.defaultVoteShares![coalition.id] || 0;
+            const partyCount = coalition.parties.length;
+            coalition.parties.forEach((partyId) => {
+              partyShares[partyId] = coalitionShare / partyCount;
+            });
           });
-          setVoteShares(shares);
+          setPartyVoteShares(partyShares);
+        } else {
+          // Create equal shares per party
+          const equalShare = 1 / config.parties.length;
+          const shares: Record<string, number> = {};
+          config.parties.forEach((p) => {
+            shares[p.id] = equalShare;
+          });
+          setPartyVoteShares(shares);
         }
+        // Initialize territorialita from config
+        const terrFlags: Record<string, boolean> = {};
+        config.parties.forEach((p) => {
+          terrFlags[p.id] = (p as any).territorialita || false;
+        });
+        setTerritorialita(terrFlags);
         setResult(null);
       })
       .catch((err) => setError(err.message));
@@ -140,21 +174,21 @@ function App() {
     };
   }, [isCustomMode, electionConfig, customName, customSeats, customPropPercent, customMajPercent, customParties, customCoalitions, useCoalitions]);
 
-  // Update vote shares when effective coalitions change in custom mode
+  // Update party vote shares when effective config changes in custom mode
   useEffect(() => {
     if (!isCustomMode || !effectiveConfig) return;
 
-    setVoteShares(prevShares => {
+    setPartyVoteShares(prevShares => {
       const newShares: Record<string, number> = {};
-      const equalShare = 1 / effectiveConfig.coalitions.length;
+      const equalShare = 1 / effectiveConfig.parties.length;
 
-      // Keep existing shares for coalitions that still exist
-      effectiveConfig.coalitions.forEach((c) => {
-        if (c.id in prevShares) {
-          newShares[c.id] = prevShares[c.id];
+      // Keep existing shares for parties that still exist
+      effectiveConfig.parties.forEach((p) => {
+        if (p.id in prevShares) {
+          newShares[p.id] = prevShares[p.id];
         } else {
-          // New coalition gets equal share
-          newShares[c.id] = equalShare;
+          // New party gets equal share
+          newShares[p.id] = equalShare;
         }
       });
 
@@ -166,26 +200,30 @@ function App() {
         return prevShares; // No change needed
       }
 
-      // Normalize only for new coalitions (redistribute remaining)
-      const existingTotal = Object.entries(newShares)
-        .filter(([id]) => id in prevShares)
-        .reduce((sum, [, val]) => sum + val, 0);
-
-      const newCoalitions = effectiveConfig.coalitions.filter(c => !(c.id in prevShares));
-      if (newCoalitions.length > 0 && existingTotal < 1) {
-        const remainingShare = (1 - existingTotal) / newCoalitions.length;
-        newCoalitions.forEach(c => {
-          newShares[c.id] = remainingShare;
-        });
-      }
-
       return newShares;
     });
-  }, [isCustomMode, effectiveConfig?.coalitions.map(c => c.id).join(',')]);
 
-  // Handle vote share changes
+    // Also update territorialita flags
+    setTerritorialita(prevFlags => {
+      const newFlags: Record<string, boolean> = {};
+      effectiveConfig.parties.forEach((p) => {
+        newFlags[p.id] = prevFlags[p.id] || false;
+      });
+      return newFlags;
+    });
+  }, [isCustomMode, effectiveConfig?.parties.map(p => p.id).join(',')]);
+
+  // Handle party vote share changes
   const handleVoteShareChange = useCallback((id: string, value: number) => {
-    setVoteShares((prev) => ({
+    setPartyVoteShares((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+  }, []);
+
+  // Handle territorialita changes
+  const handleTerritorialitaChange = useCallback((id: string, value: boolean) => {
+    setTerritorialita((prev) => ({
       ...prev,
       [id]: value,
     }));
@@ -193,15 +231,15 @@ function App() {
 
   // Normalize vote shares to sum to 1
   const normalizeShares = useCallback(() => {
-    const total = Object.values(voteShares).reduce((a, b) => a + b, 0);
+    const total = Object.values(partyVoteShares).reduce((a, b) => a + b, 0);
     if (total > 0) {
       const normalized: Record<string, number> = {};
-      Object.entries(voteShares).forEach(([id, value]) => {
+      Object.entries(partyVoteShares).forEach(([id, value]) => {
         normalized[id] = value / total;
       });
-      setVoteShares(normalized);
+      setPartyVoteShares(normalized);
     }
-  }, [voteShares]);
+  }, [partyVoteShares]);
 
   // Run simulation
   const handleSimulate = useCallback(async () => {
@@ -212,9 +250,14 @@ function App() {
     setError(null);
 
     try {
+      // Calcola le coalition shares dai party shares
+      const coalitionShares = calculateCoalitionShares(configToUse, partyVoteShares);
+
       const res = await runSimulation({
         electionId: selectedElectionId,
-        voteShares,
+        voteShares: coalitionShares,
+        partyVoteShares,
+        partyTerritorialita: territorialita,
         iterations,
         seed,
         customConfig: isCustomMode ? configToUse : undefined,
@@ -225,14 +268,38 @@ function App() {
     } finally {
       setLoading(false);
     }
-  }, [selectedElectionId, isCustomMode, effectiveConfig, electionConfig, voteShares, iterations, seed]);
+  }, [selectedElectionId, isCustomMode, effectiveConfig, electionConfig, partyVoteShares, territorialita, iterations, seed, calculateCoalitionShares]);
 
   // Handle custom config upload
   const handleConfigUpload = useCallback((config: ElectionConfig) => {
     setElectionConfig(config);
-    if (config.defaultVoteShares) {
-      setVoteShares(config.defaultVoteShares);
+    // Initialize party vote shares
+    if (config.defaultPartyVoteShares) {
+      setPartyVoteShares(config.defaultPartyVoteShares);
+    } else if (config.defaultVoteShares) {
+      const partyShares: Record<string, number> = {};
+      config.coalitions.forEach((coalition) => {
+        const coalitionShare = config.defaultVoteShares![coalition.id] || 0;
+        const partyCount = coalition.parties.length;
+        coalition.parties.forEach((partyId) => {
+          partyShares[partyId] = coalitionShare / partyCount;
+        });
+      });
+      setPartyVoteShares(partyShares);
+    } else {
+      const equalShare = 1 / config.parties.length;
+      const shares: Record<string, number> = {};
+      config.parties.forEach((p) => {
+        shares[p.id] = equalShare;
+      });
+      setPartyVoteShares(shares);
     }
+    // Initialize territorialita
+    const terrFlags: Record<string, boolean> = {};
+    config.parties.forEach((p) => {
+      terrFlags[p.id] = (p as any).territorialita || false;
+    });
+    setTerritorialita(terrFlags);
     setResult(null);
   }, []);
 
@@ -243,12 +310,17 @@ function App() {
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Electoral Monte Carlo Simulator
-          </h1>
-          <p className="mt-2 text-gray-600">
-            Simula l'allocazione dei seggi parlamentari con sistema misto proporzionale-maggioritario
-          </p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Electoral Monte Carlo Simulator
+              </h1>
+              <p className="mt-2 text-gray-600">
+                Simula l'allocazione dei seggi parlamentari con sistema misto proporzionale-maggioritario
+              </p>
+            </div>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
@@ -336,6 +408,47 @@ function App() {
               </div>
             )}
 
+            {/* Vote shares form */}
+            {displayConfig && displayConfig.parties.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Quote di Voto Partiti (%)
+                  </h2>
+                  <button
+                    onClick={normalizeShares}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                  >
+                    Normalizza
+                  </button>
+                </div>
+                <VoteSharesForm
+                  parties={displayConfig.parties}
+                  coalitions={displayConfig.coalitions}
+                  voteShares={partyVoteShares}
+                  territorialita={territorialita}
+                  onChange={handleVoteShareChange}
+                  onTerritorialitaChange={handleTerritorialitaChange}
+                />
+              </div>
+            )}
+
+            {/* Simulation controls */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Parametri Simulazione
+              </h2>
+              <SimulationControls
+                iterations={iterations}
+                seed={seed}
+                onIterationsChange={setIterations}
+                onSeedChange={setSeed}
+                onSimulate={handleSimulate}
+                loading={loading}
+                disabled={!displayConfig || (isCustomMode && customParties.length === 0)}
+              />
+            </div>
+
             {/* Warning if no parties/coalitions in custom mode */}
             {isCustomMode && customParties.length === 0 && (
               <div className="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg">
@@ -347,86 +460,42 @@ function App() {
 
           {/* Right column - Results */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Election info + Vote shares + Simulation controls in grid */}
+            {/* Election info */}
             {displayConfig && (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {/* Left side - Election info */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    {displayConfig.election.name}
-                  </h2>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div className="bg-gray-50 rounded-lg p-3">
-                      <p className="text-gray-500">Seggi Totali</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {displayConfig.election.seats}
-                      </p>
-                    </div>
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <p className="text-blue-600">Proporzionale</p>
-                      <p className="text-2xl font-bold text-blue-700">
-                        {Math.round(displayConfig.election.proportionalCoefficient * 100)}%
-                      </p>
-                    </div>
-                    <div className="bg-amber-50 rounded-lg p-3">
-                      <p className="text-amber-600">Maggioritario</p>
-                      <p className="text-2xl font-bold text-amber-700">
-                        {Math.round(displayConfig.election.majoritarianCoefficient * 100)}%
-                      </p>
-                    </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                  {displayConfig.election.name}
+                </h2>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-gray-500">Seggi Totali</p>
+                    <p className="text-2xl font-bold text-gray-900">
+                      {displayConfig.election.seats}
+                    </p>
                   </div>
-                  {/* Show parties/coalitions count */}
-                  <div className="mt-4 pt-4 border-t border-gray-200 flex gap-4 text-sm text-gray-600">
-                    <span>
-                      <span className="font-medium">{displayConfig.parties.length}</span> partiti
-                    </span>
-                    {(useCoalitions || !isCustomMode) && (
-                      <span>
-                        <span className="font-medium">{displayConfig.coalitions.length}</span> {isCustomMode && !useCoalitions ? 'entità' : 'coalizioni'}
-                      </span>
-                    )}
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <p className="text-blue-600">Proporzionale</p>
+                    <p className="text-2xl font-bold text-blue-700">
+                      {Math.round(displayConfig.election.proportionalCoefficient * 100)}%
+                    </p>
+                  </div>
+                  <div className="bg-amber-50 rounded-lg p-3">
+                    <p className="text-amber-600">Maggioritario</p>
+                    <p className="text-2xl font-bold text-amber-700">
+                      {Math.round(displayConfig.election.majoritarianCoefficient * 100)}%
+                    </p>
                   </div>
                 </div>
-
-                {/* Right side - Vote shares and Simulation controls */}
-                <div className="space-y-6">
-                  {/* Vote shares form */}
-                  {displayConfig.coalitions.length > 0 && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                      <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-semibold text-gray-900">
-                          Quote di Voto (%)
-                        </h2>
-                        <button
-                          onClick={normalizeShares}
-                          className="text-sm text-primary-600 hover:text-primary-700 font-medium"
-                        >
-                          Normalizza
-                        </button>
-                      </div>
-                      <VoteSharesForm
-                        coalitions={displayConfig.coalitions}
-                        voteShares={voteShares}
-                        onChange={handleVoteShareChange}
-                      />
-                    </div>
+                {/* Show parties/coalitions count */}
+                <div className="mt-4 pt-4 border-t border-gray-200 flex gap-4 text-sm text-gray-600">
+                  <span>
+                    <span className="font-medium">{displayConfig.parties.length}</span> partiti
+                  </span>
+                  {(useCoalitions || !isCustomMode) && (
+                    <span>
+                      <span className="font-medium">{displayConfig.coalitions.length}</span> {isCustomMode && !useCoalitions ? 'entita' : 'coalizioni'}
+                    </span>
                   )}
-
-                  {/* Simulation controls */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                      Parametri Simulazione
-                    </h2>
-                    <SimulationControls
-                      iterations={iterations}
-                      seed={seed}
-                      onIterationsChange={setIterations}
-                      onSeedChange={setSeed}
-                      onSimulate={handleSimulate}
-                      loading={loading}
-                      disabled={!displayConfig || (isCustomMode && customParties.length === 0)}
-                    />
-                  </div>
                 </div>
               </div>
             )}
