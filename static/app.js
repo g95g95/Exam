@@ -724,33 +724,50 @@ async function loadPartyTemplate() {
         state.partyIdCounter = 0;
         state.coalitionIdCounter = 0;
 
+        // Handle different JSON formats
+        let parties = [];
+        let coalitions = [];
+        let electionName = null;
+
+        // Check if data is an array (simple format: [{name, symbol}])
+        if (Array.isArray(data)) {
+            parties = data;
+        } else {
+            // Object format with properties
+            parties = data.parties || [];
+            coalitions = data.coalitions || [];
+            electionName = data.name || null;
+        }
+
         // Update election name if provided
-        if (data.name) {
-            document.getElementById('electionName').value = data.name;
+        if (electionName) {
+            document.getElementById('electionName').value = electionName;
         }
 
         // Add parties from template
-        if (data.parties) {
-            data.parties.forEach(p => {
-                addParty(p.name, p.share, p.color, p.image);
-            });
-        }
+        // Calculate default share if not provided (distribute evenly)
+        const defaultShare = parties.length > 0 ? Math.round(100 / parties.length * 10) / 10 : 10;
+
+        parties.forEach(p => {
+            // Support both 'symbol' (base64) and 'image' field names
+            const image = p.image || (p.symbol ? `data:image/png;base64,${p.symbol}` : null);
+            const share = p.share !== undefined ? p.share : defaultShare;
+            addParty(p.name, share, p.color, image);
+        });
 
         // Add coalitions from template
-        if (data.coalitions) {
-            data.coalitions.forEach(c => {
-                addCoalition(c.name);
-                const coalition = state.coalitions.find(co => co.name === c.name);
-                if (coalition && c.parties) {
-                    c.parties.forEach(partyName => {
-                        const party = state.parties.find(p => p.name === partyName);
-                        if (party) {
-                            addPartyToCoalition(party.id, coalition.id);
-                        }
-                    });
-                }
-            });
-        }
+        coalitions.forEach(c => {
+            addCoalition(c.name);
+            const coalition = state.coalitions.find(co => co.name === c.name);
+            if (coalition && c.parties) {
+                c.parties.forEach(partyName => {
+                    const party = state.parties.find(p => p.name === partyName);
+                    if (party) {
+                        addPartyToCoalition(party.id, coalition.id);
+                    }
+                });
+            }
+        });
 
         updateSummary();
 
