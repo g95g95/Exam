@@ -9,6 +9,7 @@ const state = {
     draggedParty: null,
     partyIdCounter: 0,
     coalitionIdCounter: 0,
+    pendingParties: [], // For party selection modal
     partyColors: [
         '#e53e3e', '#dd6b20', '#d69e2e', '#38a169', '#319795',
         '#3182ce', '#5a67d8', '#805ad5', '#d53f8c', '#718096',
@@ -718,44 +719,179 @@ async function loadPartyTemplate() {
         const response = await fetch(`/api/parties-template/${filename}`);
         const data = await response.json();
 
-        // Reset current state
-        state.parties = [];
-        state.coalitions = [];
-        state.partyIdCounter = 0;
-        state.coalitionIdCounter = 0;
-
-        // Update election name if provided
-        if (data.name) {
-            document.getElementById('electionName').value = data.name;
+        // Show party selection modal instead of loading directly
+        if (data.parties && data.parties.length > 0) {
+            state.pendingParties = data.parties.map(p => ({
+                ...p,
+                selected: true
+            }));
+            state.pendingCoalitions = data.coalitions || [];
+            state.pendingElectionName = data.name || '';
+            showPartySelectionModal();
+        } else {
+            alert('Nessun partito trovato nel template');
         }
 
-        // Add parties from template
-        if (data.parties) {
-            data.parties.forEach(p => {
-                addParty(p.name, p.share, p.color, p.image);
-            });
+    } catch (error) {
+        console.error('Error loading template:', error);
+        alert('Errore nel caricamento del template');
+    }
+}
+
+/**
+ * Handle JSON file upload
+ */
+function handleJsonFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            if (data.parties && data.parties.length > 0) {
+                state.pendingParties = data.parties.map(p => ({
+                    name: p.name || p.party || p.part1 || 'Partito',
+                    share: p.share || 10,
+                    color: p.color || null,
+                    image: p.image || p.symbol || null,
+                    selected: true
+                }));
+                state.pendingCoalitions = data.coalitions || [];
+                state.pendingElectionName = data.name || '';
+                showPartySelectionModal();
+            } else {
+                alert('Nessun partito trovato nel file JSON');
+            }
+        } catch (error) {
+            console.error('Error parsing JSON:', error);
+            alert('Errore nel parsing del file JSON');
+        }
+    };
+    reader.readAsText(file);
+
+    // Reset file input
+    event.target.value = '';
+}
+
+/**
+ * Show party selection modal
+ */
+function showPartySelectionModal() {
+    const modal = document.getElementById('partySelectionModal');
+    const grid = document.getElementById('partySelectionGrid');
+
+    grid.innerHTML = '';
+
+    state.pendingParties.forEach((party, index) => {
+        const item = document.createElement('label');
+        item.className = 'party-selection-item';
+
+        let imageHtml = '';
+        if (party.image) {
+            imageHtml = `<img src="${party.image}" alt="${party.name}" onerror="this.style.display='none'">`;
+        } else if (party.color) {
+            imageHtml = `<div class="party-selection-color" style="background-color: ${party.color}"></div>`;
+        } else {
+            const colorIndex = index % state.partyColors.length;
+            imageHtml = `<div class="party-selection-color" style="background-color: ${state.partyColors[colorIndex]}"></div>`;
         }
 
-        // Add coalitions from template
-        if (data.coalitions) {
-            data.coalitions.forEach(c => {
+        item.innerHTML = `
+            <input type="checkbox" data-index="${index}" ${party.selected ? 'checked' : ''} onchange="updatePartySelection(${index}, this.checked)">
+            ${imageHtml}
+            <span>${party.name}</span>
+        `;
+        grid.appendChild(item);
+    });
+
+    document.getElementById('selectAllParties').checked = true;
+    modal.classList.remove('hidden');
+}
+
+/**
+ * Close party selection modal
+ */
+function closePartySelectionModal() {
+    document.getElementById('partySelectionModal').classList.add('hidden');
+    state.pendingParties = [];
+    state.pendingCoalitions = [];
+    state.pendingElectionName = '';
+}
+
+/**
+ * Toggle select all parties
+ */
+function toggleSelectAllParties() {
+    const checked = document.getElementById('selectAllParties').checked;
+    state.pendingParties.forEach((p, i) => {
+        p.selected = checked;
+    });
+    document.querySelectorAll('#partySelectionGrid input[type="checkbox"]').forEach(cb => {
+        cb.checked = checked;
+    });
+}
+
+/**
+ * Update party selection
+ */
+function updatePartySelection(index, selected) {
+    state.pendingParties[index].selected = selected;
+
+    // Update select all checkbox
+    const allSelected = state.pendingParties.every(p => p.selected);
+    document.getElementById('selectAllParties').checked = allSelected;
+}
+
+/**
+ * Confirm party selection and load selected parties
+ */
+function confirmPartySelection() {
+    const selectedParties = state.pendingParties.filter(p => p.selected);
+
+    if (selectedParties.length === 0) {
+        alert('Seleziona almeno un partito');
+        return;
+    }
+
+    // Reset current state
+    state.parties = [];
+    state.coalitions = [];
+    state.partyIdCounter = 0;
+    state.coalitionIdCounter = 0;
+
+    // Update election name if provided
+    if (state.pendingElectionName) {
+        document.getElementById('electionName').value = state.pendingElectionName;
+    }
+
+    // Add selected parties
+    selectedParties.forEach(p => {
+        addParty(p.name, p.share, p.color, p.image);
+    });
+
+    // Add coalitions (only with parties that were selected)
+    if (state.pendingCoalitions) {
+        state.pendingCoalitions.forEach(c => {
+            const coalitionParties = c.parties.filter(pName =>
+                selectedParties.some(sp => sp.name === pName)
+            );
+            if (coalitionParties.length > 0) {
                 addCoalition(c.name);
                 const coalition = state.coalitions.find(co => co.name === c.name);
-                if (coalition && c.parties) {
-                    c.parties.forEach(partyName => {
+                if (coalition) {
+                    coalitionParties.forEach(partyName => {
                         const party = state.parties.find(p => p.name === partyName);
                         if (party) {
                             addPartyToCoalition(party.id, coalition.id);
                         }
                     });
                 }
-            });
-        }
-
-        updateSummary();
-
-    } catch (error) {
-        console.error('Error loading template:', error);
-        alert('Errore nel caricamento del template');
+            }
+        });
     }
+
+    updateSummary();
+    closePartySelectionModal();
 }

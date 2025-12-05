@@ -81,10 +81,90 @@ body {
     margin-bottom: 1.5rem;
 }
 
+.main-content-3col {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+@media (max-width: 1200px) {
+    .main-content-3col {
+        grid-template-columns: 1fr 1fr;
+    }
+    .coalitions-panel-compact {
+        grid-column: span 2;
+    }
+}
+
 @media (max-width: 900px) {
     .main-content {
         grid-template-columns: 1fr;
     }
+    .main-content-3col {
+        grid-template-columns: 1fr;
+    }
+    .coalitions-panel-compact {
+        grid-column: span 1;
+    }
+}
+
+/* Compact Coalitions Panel */
+.coalitions-panel-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.coalitions-panel-compact h2 {
+    margin-bottom: 0.5rem;
+}
+
+.coalitions-container-compact {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.coalitions-container-compact .coalition-card {
+    min-height: auto;
+    padding: 0.75rem;
+}
+
+.coalitions-container-compact .coalition-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+}
+
+.coalitions-container-compact .coalition-name-input {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.coalitions-container-compact .coalition-parties {
+    min-height: 30px;
+}
+
+.coalitions-container-compact .coalition-party-tag {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.unassigned-pool-compact {
+    background: var(--background);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-top: auto;
+}
+
+.unassigned-pool-compact h4 {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.unassigned-pool-compact .parties-pool {
+    min-height: 40px;
+    padding: 0.25rem;
 }
 
 /* Form Groups */
@@ -683,6 +763,119 @@ input[type="range"]::-webkit-slider-thumb:hover {
     color: var(--text-secondary);
     margin-top: 0.5rem;
     font-style: italic;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border-radius: 12px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: var(--primary-color);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.modal-close:hover {
+    color: var(--danger-color);
+}
+
+.modal-body {
+    padding: 1rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.select-all-row {
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.party-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+}
+
+.party-selection-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--background);
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.party-selection-item:hover {
+    background: var(--proportional-bg);
+}
+
+.party-selection-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.party-selection-item img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 4px;
+}
+
+.party-selection-item .party-selection-color {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+}
+
+.party-selection-item span {
+    flex: 1;
+    font-size: 0.875rem;
 }
 
 /* Responsive */

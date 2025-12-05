@@ -1,23 +1,34 @@
 # Party Selection Form Feature
 
 ## Todo
-- [ ] Add file upload input for JSON party templates (with base64 images)
-- [ ] Create party selection modal for choosing which parties to load
-- [ ] Reorganize layout - move Coalitions and Unassigned Pool to top-right
-- [ ] Commit and push changes
+- [x] Add file upload input for JSON party templates (with base64 images)
+- [x] Create party selection modal for choosing which parties to load
+- [x] Reorganize layout - move Coalitions and Unassigned Pool to top-right
+- [x] Commit and push changes
 
-## Plan
+## Review
 
-### 1. File Upload Input
-- Add a file input button next to "Carica da JSON"
-- Accept `.json` files with structure: `{ parties: [{ name, symbol }] }`
+### Changes Made
 
-### 2. Party Selection Modal
-- Create a modal that pops up after loading JSON
-- Show checkboxes for each party with preview (name + image)
-- "Conferma" button to load selected parties
+1. **File Upload (index.html)**
+   - Added hidden file input for `.json` files
+   - Added "Carica File JSON" button
 
-### 3. Layout Reorganization
-- Change layout to have 3 columns on top row
-- Move Coalitions section to top-right area
-- Make the groupboxes more compact
+2. **Party Selection Modal (index.html + styles.css + app.js)**
+   - Modal with checkboxes for each party
+   - Shows party name + image/color preview
+   - "Seleziona Tutti" toggle
+   - Confirm/Cancel buttons
+
+3. **Layout Reorganization (index.html + styles.css)**
+   - Changed to 3-column grid layout on top row
+   - Left: Configuration panel
+   - Center: Summary panel
+   - Right: Coalitions + Unassigned Pool (compact)
+   - Removed old coalitions section from below
+   - Responsive breakpoints for smaller screens
+
+### Files Modified
+- `static/index.html` - UI structure
+- `static/styles.css` - Modal and layout styles
+- `static/app.js` - File upload and modal logic
