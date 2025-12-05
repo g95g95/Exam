@@ -114,9 +114,17 @@
         <section class="panel parties-section">
             <div class="section-header">
                 <h2>Gestione Partiti</h2>
-                <button class="btn btn-primary" onclick="addParty()">
-                    + Aggiungi Partito
-                </button>
+                <div class="header-buttons">
+                    <select id="partyTemplateSelect" class="template-select">
+                        <option value="">-- Carica Template --</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="loadPartyTemplate()">
+                        Carica da JSON
+                    </button>
+                    <button class="btn btn-primary" onclick="addParty()">
+                        + Aggiungi Partito
+                    </button>
+                </div>
             </div>
 
             <div class="parties-grid" id="partiesContainer">
