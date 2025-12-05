@@ -112,8 +112,13 @@ function updatePartyShare(id, share) {
 function getPartyIndicatorHtml(party, size = 'normal') {
     const sizeClass = size === 'small' ? 'party-color-indicator-small' : 'party-color-indicator';
     if (party.image) {
+        // Handle base64 images (add data URI prefix if needed)
+        let imageSrc = party.image;
+        if (party.image && !party.image.startsWith('/') && !party.image.startsWith('http') && !party.image.startsWith('data:')) {
+            imageSrc = `data:image/png;base64,${party.image}`;
+        }
         return `<span class="${sizeClass} party-image-indicator" style="background-color: ${party.color}">
-            <img src="${party.image}" alt="${party.name}" onerror="this.style.display='none'">
+            <img src="${imageSrc}" alt="${party.name}" onerror="this.style.display='none'">
         </span>`;
     }
     return `<span class="${sizeClass}" style="background-color: ${party.color}"></span>`;
@@ -722,7 +727,10 @@ async function loadPartyTemplate() {
         // Show party selection modal instead of loading directly
         if (data.parties && data.parties.length > 0) {
             state.pendingParties = data.parties.map(p => ({
-                ...p,
+                name: p.name || p.party || 'Partito',
+                share: p.share || 10,
+                color: p.color || null,
+                image: p.image || p.symbol || null,
                 selected: true
             }));
             state.pendingCoalitions = data.coalitions || [];
@@ -790,7 +798,12 @@ function showPartySelectionModal() {
 
         let imageHtml = '';
         if (party.image) {
-            imageHtml = `<img src="${party.image}" alt="${party.name}" onerror="this.style.display='none'">`;
+            // Handle base64 images (add data URI prefix if needed)
+            let imageSrc = party.image;
+            if (party.image && !party.image.startsWith('/') && !party.image.startsWith('http') && !party.image.startsWith('data:')) {
+                imageSrc = `data:image/png;base64,${party.image}`;
+            }
+            imageHtml = `<img src="${imageSrc}" alt="${party.name}" onerror="this.style.display='none'">`;
         } else if (party.color) {
             imageHtml = `<div class="party-selection-color" style="background-color: ${party.color}"></div>`;
         } else {
