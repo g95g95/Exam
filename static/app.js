@@ -724,17 +724,22 @@ async function loadPartyTemplate() {
         const response = await fetch(`/api/parties-template/${filename}`);
         const data = await response.json();
 
+        // Handle both array format and object format with parties property
+        const partiesArray = Array.isArray(data) ? data : (data.parties || []);
+        const coalitionsArray = Array.isArray(data) ? [] : (data.coalitions || []);
+        const electionName = Array.isArray(data) ? '' : (data.name || '');
+
         // Show party selection modal instead of loading directly
-        if (data.parties && data.parties.length > 0) {
-            state.pendingParties = data.parties.map(p => ({
+        if (partiesArray.length > 0) {
+            state.pendingParties = partiesArray.map(p => ({
                 name: p.name || p.party || 'Partito',
                 share: p.share || 10,
                 color: p.color || null,
                 image: p.image || p.symbol || null,
                 selected: true
             }));
-            state.pendingCoalitions = data.coalitions || [];
-            state.pendingElectionName = data.name || '';
+            state.pendingCoalitions = coalitionsArray;
+            state.pendingElectionName = electionName;
             showPartySelectionModal();
         } else {
             alert('Nessun partito trovato nel template');
