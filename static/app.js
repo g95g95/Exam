@@ -816,6 +816,9 @@ function displayResults(result) {
 
     grid.appendChild(enhancedResults);
 
+    cardsSection.appendChild(cardsGrid);
+    grid.appendChild(cardsSection);
+
     // Scroll to results
     container.scrollIntoView({ behavior: 'smooth' });
 }
