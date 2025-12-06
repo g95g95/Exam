@@ -741,10 +741,10 @@ function generateBarChart(results, totalSeats, majorityThreshold) {
                 <div class="bar-container">
                     <div class="bar-fill ${hasMajority ? 'has-majority' : ''}"
                          style="--bar-width: ${widthPercent}%; --bar-color: ${color}; animation-delay: ${index * 0.1}s">
+                        ${hasMajority ? '<span class="majority-badge">Maggioranza</span>' : ''}
                     </div>
-                    <span class="bar-value">${entity.seats}</span>
-                    ${hasMajority ? '<span class="majority-badge">Maggioranza</span>' : ''}
                 </div>
+                <span class="bar-value">${entity.seats}</span>
             </div>
         `;
     });
