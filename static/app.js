@@ -644,6 +644,104 @@ async function runSimulation() {
 }
 
 /**
+ * Get color for an entity (party or coalition)
+ */
+function getEntityColor(entity) {
+    let color = '#3182ce';
+    if (entity.isCoalition) {
+        const firstPartyName = entity.memberParties[0];
+        const party = state.parties.find(p => p.name === firstPartyName);
+        if (party) color = party.color;
+    } else {
+        const party = state.parties.find(p => p.name === entity.name);
+        if (party) color = party.color;
+    }
+    return color;
+}
+
+/**
+ * Generate SVG donut chart
+ */
+function generateDonutChart(results, totalSeats) {
+    const size = 200;
+    const center = size / 2;
+    const radius = 80;
+    const innerRadius = 50;
+
+    let paths = '';
+    let cumulative = 0;
+
+    results.forEach((entity, index) => {
+        const percentage = entity.seats / totalSeats;
+        const startAngle = cumulative * 2 * Math.PI - Math.PI / 2;
+        const endAngle = (cumulative + percentage) * 2 * Math.PI - Math.PI / 2;
+
+        const x1 = center + radius * Math.cos(startAngle);
+        const y1 = center + radius * Math.sin(startAngle);
+        const x2 = center + radius * Math.cos(endAngle);
+        const y2 = center + radius * Math.sin(endAngle);
+
+        const ix1 = center + innerRadius * Math.cos(startAngle);
+        const iy1 = center + innerRadius * Math.sin(startAngle);
+        const ix2 = center + innerRadius * Math.cos(endAngle);
+        const iy2 = center + innerRadius * Math.sin(endAngle);
+
+        const largeArc = percentage > 0.5 ? 1 : 0;
+        const color = getEntityColor(entity);
+
+        if (percentage > 0) {
+            paths += `<path d="M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix1} ${iy1} Z" fill="${color}" opacity="0.9">
+                <title>${entity.name}: ${entity.seats} seggi (${entity.percentage}%)</title>
+            </path>`;
+        }
+
+        cumulative += percentage;
+    });
+
+    return `<svg viewBox="0 0 ${size} ${size}" class="donut-chart">
+        ${paths}
+        <circle cx="${center}" cy="${center}" r="${innerRadius - 5}" fill="white"/>
+    </svg>`;
+}
+
+/**
+ * Generate horizontal bar chart
+ */
+function generateBarChart(results, totalSeats, majorityThreshold) {
+    const maxSeats = Math.max(...results.map(r => r.seats));
+
+    let bars = '';
+    results.forEach((entity, index) => {
+        const color = getEntityColor(entity);
+        const widthPercent = (entity.seats / maxSeats) * 100;
+        const hasMajority = entity.seats >= majorityThreshold;
+
+        bars += `
+            <div class="bar-row">
+                <div class="bar-label">${entity.name}</div>
+                <div class="bar-container">
+                    <div class="bar-fill ${hasMajority ? 'has-majority' : ''}"
+                         style="--bar-width: ${widthPercent}%; --bar-color: ${color}; animation-delay: ${index * 0.1}s">
+                    </div>
+                    <span class="bar-value">${entity.seats}</span>
+                    ${hasMajority ? '<span class="majority-badge">Maggioranza</span>' : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    // Add majority line
+    const majorityPercent = (majorityThreshold / maxSeats) * 100;
+
+    return `<div class="bar-chart">
+        <div class="majority-line" style="left: ${Math.min(majorityPercent, 100)}%">
+            <span class="majority-label">${majorityThreshold}</span>
+        </div>
+        ${bars}
+    </div>`;
+}
+
+/**
  * Display simulation results
  */
 function displayResults(result) {
@@ -653,19 +751,81 @@ function displayResults(result) {
     container.classList.remove('hidden');
     grid.innerHTML = '';
 
-    result.results.forEach(entity => {
-        // Get color from party or coalition
-        let color = '#3182ce';
-        if (entity.isCoalition) {
-            // For coalitions, use the first party's color
-            const firstPartyName = entity.memberParties[0];
-            const party = state.parties.find(p => p.name === firstPartyName);
-            if (party) color = party.color;
-        } else {
-            const party = state.parties.find(p => p.name === entity.name);
-            if (party) color = party.color;
-        }
+    const totalSeats = result.config.totalSeats;
+    const majorityThreshold = Math.floor(totalSeats / 2) + 1;
+    const results = result.results;
 
+    // Find winner
+    const winner = results[0];
+    const hasAbsoluteMajority = winner.seats >= majorityThreshold;
+    const marginFromMajority = winner.seats - majorityThreshold;
+
+    // Create enhanced results section
+    const enhancedResults = document.createElement('div');
+    enhancedResults.className = 'enhanced-results';
+
+    // Stats summary
+    enhancedResults.innerHTML = `
+        <div class="results-stats">
+            <div class="stat-box winner-box ${hasAbsoluteMajority ? 'has-majority' : ''}">
+                <span class="stat-icon">${hasAbsoluteMajority ? '&#9733;' : '&#9650;'}</span>
+                <div class="stat-content">
+                    <span class="stat-title">${hasAbsoluteMajority ? 'Maggioranza Assoluta' : 'Primo Classificato'}</span>
+                    <span class="stat-main">${winner.name}</span>
+                    <span class="stat-detail">${winner.seats} seggi (${winner.percentage}%)</span>
+                </div>
+            </div>
+            <div class="stat-box">
+                <span class="stat-icon">&#9878;</span>
+                <div class="stat-content">
+                    <span class="stat-title">Soglia Maggioranza</span>
+                    <span class="stat-main">${majorityThreshold}</span>
+                    <span class="stat-detail">su ${totalSeats} seggi</span>
+                </div>
+            </div>
+            <div class="stat-box ${marginFromMajority >= 0 ? 'positive' : 'negative'}">
+                <span class="stat-icon">${marginFromMajority >= 0 ? '&#10004;' : '&#10006;'}</span>
+                <div class="stat-content">
+                    <span class="stat-title">Margine dalla Maggioranza</span>
+                    <span class="stat-main">${marginFromMajority >= 0 ? '+' : ''}${marginFromMajority}</span>
+                    <span class="stat-detail">${marginFromMajority >= 0 ? 'seggi sopra' : 'seggi sotto'}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-container">
+            <div class="chart-section donut-section">
+                <h3>Distribuzione Seggi</h3>
+                ${generateDonutChart(results, totalSeats)}
+                <div class="chart-legend">
+                    ${results.map(entity => `
+                        <div class="legend-item">
+                            <span class="legend-color" style="background: ${getEntityColor(entity)}"></span>
+                            <span class="legend-name">${entity.name}</span>
+                            <span class="legend-value">${entity.percentage}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            <div class="chart-section bar-section">
+                <h3>Seggi per Partito/Coalizione</h3>
+                ${generateBarChart(results, totalSeats, majorityThreshold)}
+            </div>
+        </div>
+    `;
+
+    grid.appendChild(enhancedResults);
+
+    // Keep detailed cards below
+    const cardsSection = document.createElement('div');
+    cardsSection.className = 'results-cards';
+    cardsSection.innerHTML = '<h3>Dettaglio Risultati</h3>';
+
+    const cardsGrid = document.createElement('div');
+    cardsGrid.className = 'cards-grid';
+
+    results.forEach(entity => {
+        const color = getEntityColor(entity);
         const card = document.createElement('div');
         card.className = 'result-card' + (entity.isCoalition ? ' is-coalition' : '');
         card.style.borderLeftColor = color;
@@ -676,8 +836,11 @@ function displayResults(result) {
             ${entity.isCoalition && entity.memberParties.length > 0 ?
                 `<div class="result-members">${entity.memberParties.join(', ')}</div>` : ''}
         `;
-        grid.appendChild(card);
+        cardsGrid.appendChild(card);
     });
+
+    cardsSection.appendChild(cardsGrid);
+    grid.appendChild(cardsSection);
 
     // Scroll to results
     container.scrollIntoView({ behavior: 'smooth' });
