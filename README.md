@@ -102,6 +102,78 @@ experiments or post-process the raw draw history stored in
   sophisticated district-level model (e.g. correlated Gumbel draws, covariate
   adjustments) while keeping the high-level API intact.
 
+## Deployment
+
+### Prerequisites
+
+Install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+The `requirements.txt` includes:
+- `flask>=2.0.0` – Web framework
+- `flask-cors>=3.0.0` – Cross-origin resource sharing
+- `gunicorn>=21.0.0` – Production WSGI server
+
+Optional dependencies for extended features:
+- `pandas` – Excel file import support
+- `matplotlib` – Histogram generation
+
+### Local Development
+
+Start the Flask development server:
+
+```bash
+python app.py
+```
+
+The application will be available at `http://localhost:5000`.
+
+### Production Deployment
+
+For production environments, use Gunicorn as the WSGI server:
+
+```bash
+gunicorn app:app --bind 0.0.0.0:5000 --workers 4
+```
+
+Adjust the number of workers based on available CPU cores (typically `2 * num_cores + 1`).
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | `5000` | Port on which the server listens |
+
+Example:
+
+```bash
+PORT=8080 python app.py
+```
+
+### Docker (Optional)
+
+Create a `Dockerfile`:
+
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--workers", "4"]
+```
+
+Build and run:
+
+```bash
+docker build -t electoral-simulator .
+docker run -p 5000:5000 electoral-simulator
+```
+
 ## License
 
 The contents of this repository are released under the terms specified in the
