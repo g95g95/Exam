@@ -1,34 +1,38 @@
-# Party Selection Form Feature
+# Task: Migliorare visualizzazione risultati simulazione
 
-## Todo
-- [x] Add file upload input for JSON party templates (with base64 images)
-- [x] Create party selection modal for choosing which parties to load
-- [x] Reorganize layout - move Coalitions and Unassigned Pool to top-right
-- [x] Commit and push changes
+## Obiettivo
+Rendere la sezione risultati più informativa e visivamente accattivante con istogrammi, grafici e statistiche aggiuntive.
 
-## Review
+## Piano di implementazione
 
-### Changes Made
+### 1. Aggiungere istogramma a barre orizzontali
+- [ ] Creare barre orizzontali per ogni partito/coalizione
+- [ ] Colorare le barre con i colori dei partiti
+- [ ] Mostrare il numero di seggi alla fine di ogni barra
+- [ ] Animare le barre al caricamento
 
-1. **File Upload (index.html)**
-   - Added hidden file input for `.json` files
-   - Added "Carica File JSON" button
+### 2. Aggiungere grafico a torta/ciambella
+- [ ] Visualizzare la distribuzione complessiva dei seggi
+- [ ] Usare i colori dei partiti
+- [ ] Mostrare percentuali
 
-2. **Party Selection Modal (index.html + styles.css + app.js)**
-   - Modal with checkboxes for each party
-   - Shows party name + image/color preview
-   - "Seleziona Tutti" toggle
-   - Confirm/Cancel buttons
+### 3. Aggiungere statistiche chiave
+- [ ] Soglia maggioranza (50%+1)
+- [ ] Chi ha vinto (chi ha la maggioranza o è primo)
+- [ ] Margine dalla maggioranza
+- [ ] Totale seggi assegnati
 
-3. **Layout Reorganization (index.html + styles.css)**
-   - Changed to 3-column grid layout on top row
-   - Left: Configuration panel
-   - Center: Summary panel
-   - Right: Coalitions + Unassigned Pool (compact)
-   - Removed old coalitions section from below
-   - Responsive breakpoints for smaller screens
+### 4. Migliorare layout risultati
+- [ ] Sezione statistiche in alto
+- [ ] Grafico a torta a sinistra
+- [ ] Istogramma a destra
+- [ ] Mantenere card dettagliate sotto
 
-### Files Modified
-- `static/index.html` - UI structure
-- `static/styles.css` - Modal and layout styles
-- `static/app.js` - File upload and modal logic
+## File da modificare
+- `static/app.js` - funzione `displayResults()`
+- `static/styles.css` - stili per grafici e statistiche
+
+## Note
+- Non uso librerie esterne (Chart.js, D3) per semplicità
+- Uso CSS puro per le barre e SVG per la torta
+- Manteniamo il design coerente con il resto dell'app
