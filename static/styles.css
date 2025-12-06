@@ -1091,7 +1091,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 .majority-badge {
     position: absolute;
-    right: -90px;
+    left: 8px;
     top: 50%;
     transform: translateY(-50%);
     background: var(--success-color);
@@ -1101,56 +1101,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
     border-radius: 10px;
     font-weight: 600;
     text-transform: uppercase;
+    z-index: 5;
 }
 
 .majority-line {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--danger-color);
-    z-index: 10;
-    margin-left: 140px;
-}
-
-.majority-line::before {
-    content: '';
-    position: absolute;
-    top: -8px;
-    left: -4px;
-    width: 10px;
-    height: 10px;
-    background: var(--danger-color);
-    border-radius: 50%;
-}
-
-.majority-label {
-    position: absolute;
-    top: -24px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--danger-color);
-    background: white;
-    padding: 0 0.25rem;
-}
-
-/* Results Cards */
-.results-cards {
-    margin-top: 2rem;
-}
-
-.results-cards h3 {
-    font-size: 1rem;
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-}
-
-.cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
+    display: none; /* Hidden - info shown in stats box instead */
 }
 
 /* Responsive */
@@ -1166,14 +1121,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     .bar-label {
         width: 100px;
         font-size: 0.75rem;
-    }
-
-    .majority-line {
-        margin-left: 100px;
-    }
-
-    .majority-badge {
-        display: none;
     }
 }
 
@@ -1208,9 +1155,5 @@ input[type="range"]::-webkit-slider-thumb:hover {
     .bar-label {
         width: 80px;
         font-size: 0.7rem;
-    }
-
-    .majority-line {
-        margin-left: 80px;
     }
 }

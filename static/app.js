@@ -816,32 +816,6 @@ function displayResults(result) {
 
     grid.appendChild(enhancedResults);
 
-    // Keep detailed cards below
-    const cardsSection = document.createElement('div');
-    cardsSection.className = 'results-cards';
-    cardsSection.innerHTML = '<h3>Dettaglio Risultati</h3>';
-
-    const cardsGrid = document.createElement('div');
-    cardsGrid.className = 'cards-grid';
-
-    results.forEach(entity => {
-        const color = getEntityColor(entity);
-        const card = document.createElement('div');
-        card.className = 'result-card' + (entity.isCoalition ? ' is-coalition' : '');
-        card.style.borderLeftColor = color;
-        card.innerHTML = `
-            <div class="result-name">${entity.name}</div>
-            <div class="result-seats">${entity.seats}</div>
-            <div class="result-percentage">${entity.percentage}% dei seggi</div>
-            ${entity.isCoalition && entity.memberParties.length > 0 ?
-                `<div class="result-members">${entity.memberParties.join(', ')}</div>` : ''}
-        `;
-        cardsGrid.appendChild(card);
-    });
-
-    cardsSection.appendChild(cardsGrid);
-    grid.appendChild(cardsSection);
-
     // Scroll to results
     container.scrollIntoView({ behavior: 'smooth' });
 }
