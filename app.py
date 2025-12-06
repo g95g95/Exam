@@ -39,11 +39,15 @@ def simulate():
         parties_data = data.get('parties', [])
         coalitions_data = data.get('coalitions', [])
 
+        # Build lookup for territorial bonus
+        territorial_bonus_map = {p['name']: p.get('territorialBonus', False) for p in parties_data}
+
         # If there are coalitions, group parties by coalition
         if coalitions_data and any(c.get('parties', []) for c in coalitions_data):
             # Calculate coalition vote shares
             entities = []
             shares = []
+            majoritarian_shares = []
 
             # Track which parties are in coalitions
             parties_in_coalitions = set()
@@ -55,23 +59,44 @@ def simulate():
             for coalition in coalitions_data:
                 if coalition.get('parties'):
                     coalition_share = 0.0
+                    coalition_maj_share = 0.0
                     for party_name in coalition['parties']:
                         for p in parties_data:
                             if p['name'] == party_name:
-                                coalition_share += float(p.get('share', 0)) / 100.0
+                                base_share = float(p.get('share', 0)) / 100.0
+                                coalition_share += base_share
+                                # Apply +20% bonus for majoritarian if territorial bonus is set
+                                if p.get('territorialBonus', False):
+                                    coalition_maj_share += base_share * 1.2
+                                else:
+                                    coalition_maj_share += base_share
                                 break
                     entities.append(coalition['name'])
                     shares.append(coalition_share)
+                    majoritarian_shares.append(coalition_maj_share)
 
             # Add standalone parties (not in any coalition)
             for party in parties_data:
                 if party['name'] not in parties_in_coalitions:
+                    base_share = float(party.get('share', 0)) / 100.0
                     entities.append(party['name'])
-                    shares.append(float(party.get('share', 0)) / 100.0)
+                    shares.append(base_share)
+                    # Apply +20% bonus for majoritarian if territorial bonus is set
+                    if party.get('territorialBonus', False):
+                        majoritarian_shares.append(base_share * 1.2)
+                    else:
+                        majoritarian_shares.append(base_share)
         else:
             # No coalitions, use individual parties
             entities = [p['name'] for p in parties_data]
             shares = [float(p.get('share', 0)) / 100.0 for p in parties_data]
+            majoritarian_shares = []
+            for p in parties_data:
+                base_share = float(p.get('share', 0)) / 100.0
+                if p.get('territorialBonus', False):
+                    majoritarian_shares.append(base_share * 1.2)
+                else:
+                    majoritarian_shares.append(base_share)
 
         # Validate we have at least one entity
         if not entities:
@@ -85,7 +110,8 @@ def simulate():
             proportional_shares=shares,
             proportional_coefficient=proportional_pct,
             majoritarian_coefficient=majoritarian_pct,
-            seats=seats
+            seats=seats,
+            majoritarian_shares=majoritarian_shares
         )
 
         # Validate
