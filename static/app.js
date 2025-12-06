@@ -38,7 +38,7 @@ function initializeDefaultParties() {
 /**
  * Add a new party
  */
-function addParty(name = null, share = 10, color = null, image = null) {
+function addParty(name = null, share = 10, color = null, image = null, territorialBonus = false) {
     const id = ++state.partyIdCounter;
     const partyName = name || `Partito ${id}`;
     const colorIndex = (id - 1) % state.partyColors.length;
@@ -49,7 +49,8 @@ function addParty(name = null, share = 10, color = null, image = null) {
         share: share,
         color: color || state.partyColors[colorIndex],
         image: image || null,
-        coalitionId: null
+        coalitionId: null,
+        territorialBonus: territorialBonus
     };
 
     state.parties.push(party);
@@ -107,6 +108,16 @@ function updatePartyShare(id, share) {
 }
 
 /**
+ * Update party territorial bonus
+ */
+function updatePartyTerritorialBonus(id, checked) {
+    const party = state.parties.find(p => p.id === id);
+    if (party) {
+        party.territorialBonus = checked;
+    }
+}
+
+/**
  * Generate party indicator HTML (image or color)
  */
 function getPartyIndicatorHtml(party, size = 'normal') {
@@ -153,6 +164,13 @@ function renderParties() {
                 <input type="range" class="party-share-slider" id="party-slider-${party.id}"
                        value="${party.share}" min="0" max="100" step="0.1"
                        oninput="updatePartyShare(${party.id}, this.value)">
+            </div>
+            <div class="party-bonus-group">
+                <label class="bonus-checkbox-label">
+                    <input type="checkbox" ${party.territorialBonus ? 'checked' : ''}
+                           onchange="updatePartyTerritorialBonus(${party.id}, this.checked)">
+                    Bonus territoriale (+20% magg.)
+                </label>
             </div>
         `;
         container.appendChild(card);
@@ -595,7 +613,8 @@ async function runSimulation() {
         // Prepare data
         const partiesData = state.parties.map(p => ({
             name: p.name,
-            share: p.share
+            share: p.share,
+            territorialBonus: p.territorialBonus || false
         }));
 
         const coalitionsData = state.coalitions
@@ -815,9 +834,6 @@ function displayResults(result) {
     `;
 
     grid.appendChild(enhancedResults);
-
-    cardsSection.appendChild(cardsGrid);
-    grid.appendChild(cardsSection);
 
     // Scroll to results
     container.scrollIntoView({ behavior: 'smooth' });

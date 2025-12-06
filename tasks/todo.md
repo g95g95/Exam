@@ -1,65 +1,60 @@
-# Task: Migliorare visualizzazione risultati simulazione
+# Task: Fix UI layout and add Territorial Bonus flag
 
 ## Obiettivo
-Rendere la sezione risultati più informativa e visivamente accattivante con istogrammi, grafici e statistiche aggiuntive.
+1. Fix the "Seggi per Partito/Coalizione" display - text should be readable, not overlapping
+2. Add "Bonus territoriale" checkbox to each party (+20% to majoritarian component when checked)
 
 ## Piano di implementazione
 
-### 1. Aggiungere istogramma a barre orizzontali
-- [x] Creare barre orizzontali per ogni partito/coalizione
-- [x] Colorare le barre con i colori dei partiti
-- [x] Mostrare il numero di seggi alla fine di ogni barra
-- [x] Animare le barre al caricamento
+### 1. Fix bar chart readability
+- [x] Investigate why text overlaps in the bar chart labels
+- [x] Adjust bar-label width and remove text truncation
+- [x] Fix undefined cardsSection error in displayResults
 
-### 2. Aggiungere grafico a torta/ciambella
-- [x] Visualizzare la distribuzione complessiva dei seggi
-- [x] Usare i colori dei partiti
-- [x] Mostrare percentuali
-
-### 3. Aggiungere statistiche chiave
-- [x] Soglia maggioranza (50%+1)
-- [x] Chi ha vinto (chi ha la maggioranza o è primo)
-- [x] Margine dalla maggioranza
-- [x] Totale seggi assegnati
-
-### 4. Migliorare layout risultati
-- [x] Sezione statistiche in alto
-- [x] Grafico a torta a sinistra
-- [x] Istogramma a destra
-- [x] Mantenere card dettagliate sotto
+### 2. Add "Bonus territoriale" flag to parties
+- [x] Add `territorialBonus` property to party state in app.js
+- [x] Add `updatePartyTerritorialBonus` function
+- [x] Add checkbox UI in party card rendering
+- [x] Add CSS styling for the checkbox
+- [x] Include territorialBonus in API request data
+- [x] Modify backend (app.py) to calculate majoritarian weights with +20% bonus
+- [x] Modify Electoral_Montecarlo.py to support separate majoritarian_shares
 
 ## File modificati
-- `static/app.js` - funzione `displayResults()` + nuove funzioni `generateDonutChart()`, `generateBarChart()`, `getEntityColor()`
-- `static/styles.css` - ~200 righe di nuovi stili per grafici e statistiche
+- `static/app.js` - addParty, renderParties, runSimulation, updatePartyTerritorialBonus
+- `static/styles.css` - bar-label width, party-bonus-group styles
+- `app.py` - simulation logic to handle territorial bonus
+- `Electoral_Montecarlo.py` - ElectionData, _set_data, _allocate_majoritarian_seats
 
 ## Review
 
 ### Modifiche effettuate
 
-1. **Nuove funzioni in app.js:**
-   - `getEntityColor(entity)` - estrae il colore di un partito/coalizione
-   - `generateDonutChart(results, totalSeats)` - genera SVG per grafico a ciambella
-   - `generateBarChart(results, totalSeats, majorityThreshold)` - genera HTML per istogramma
+1. **Bar chart fix:**
+   - Increased `.bar-label` width from 140px to 160px
+   - Removed text truncation (nowrap, overflow, text-overflow)
+   - Fixed bug with undefined `cardsSection` variable in displayResults
 
-2. **Sezione statistiche:**
-   - Box "Vincitore" con indicatore se ha maggioranza assoluta
-   - Box "Soglia Maggioranza" con il numero di seggi necessari
-   - Box "Margine" che mostra quanti seggi sopra/sotto la maggioranza
+2. **Territorial Bonus - Frontend (app.js):**
+   - Added `territorialBonus` property to party objects (default: false)
+   - Added `updatePartyTerritorialBonus(id, checked)` function
+   - Added checkbox in each party card: "Bonus territoriale (+20% magg.)"
+   - Included `territorialBonus` in API request for each party
 
-3. **Grafici:**
-   - Grafico a ciambella SVG interattivo con tooltip al hover
-   - Legenda con colori e percentuali
-   - Istogramma a barre orizzontali con animazione
-   - Linea verticale rossa che indica la soglia maggioranza
-   - Badge "Maggioranza" per chi supera la soglia
+3. **Territorial Bonus - Styling (styles.css):**
+   - Added `.party-bonus-group` with border separator
+   - Added `.bonus-checkbox-label` styling
 
-4. **Stili CSS:**
-   - Layout responsive per statistiche e grafici
-   - Animazioni CSS per le barre (`@keyframes growBar`)
-   - Hover effects sui grafici
-   - Media queries per mobile
+4. **Territorial Bonus - Backend (app.py):**
+   - Calculate `majoritarian_shares` with +20% multiplier for flagged parties
+   - Pass `majoritarian_shares` to simulator
+
+5. **Territorial Bonus - Simulation (Electoral_Montecarlo.py):**
+   - Added `majoritarian_shares` optional field to `ElectionData`
+   - Modified `_set_data` to accept `majoritarian_shares`
+   - Modified `_allocate_majoritarian_seats` to use `majoritarian_shares` when available
 
 ### Note tecniche
-- Nessuna libreria esterna usata (solo CSS + SVG puro)
-- Codice mantenuto semplice e leggibile
-- Responsive design incluso
+- The +20% bonus only affects majoritarian seat allocation (not proportional)
+- If party A has 30% share with bonus, their majoritarian weight is 36%
+- Works correctly with coalitions: bonus is applied per-party before coalition aggregation

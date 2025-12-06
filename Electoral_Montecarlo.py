@@ -28,6 +28,7 @@ class ElectionData:
     proportional_coefficient: float = 0.61
     majoritarian_coefficient: float = 0.37
     seats: int = 630
+    majoritarian_shares: Optional[List[float]] = None
 
     def __post_init__(self) -> None:  # pragma: no cover - simple coercion
         self.parties = list(self.parties)
@@ -35,6 +36,8 @@ class ElectionData:
         self.proportional_coefficient = float(self.proportional_coefficient)
         self.majoritarian_coefficient = float(self.majoritarian_coefficient)
         self.seats = int(self.seats)
+        if self.majoritarian_shares is not None:
+            self.majoritarian_shares = [float(value) for value in self.majoritarian_shares]
         self._validate()
 
     # ------------------------------------------------------------------
@@ -303,6 +306,7 @@ class MontecarloElectoral:
         proportional_coefficient: float,
         majoritarian_coefficient: float,
         seats: int,
+        majoritarian_shares: Optional[Iterable[float]] = None,
     ) -> None:
         self.data = ElectionData(
             name=name,
@@ -311,6 +315,7 @@ class MontecarloElectoral:
             proportional_coefficient=proportional_coefficient,
             majoritarian_coefficient=majoritarian_coefficient,
             seats=seats,
+            majoritarian_shares=list(majoritarian_shares) if majoritarian_shares else None,
         )
         self.results = dict(zip(self.data.parties, self.data.proportional_shares))
 
@@ -363,9 +368,12 @@ class MontecarloElectoral:
         if majoritarian_total <= 0:
             return [0] * len(self.data.parties)
 
+        # Use majoritarian_shares if provided, otherwise fall back to proportional_shares
+        weights = self.data.majoritarian_shares if self.data.majoritarian_shares else self.data.proportional_shares
+
         result = [0] * len(self.data.parties)
         for _ in range(majoritarian_total):
-            winner = self._weighted_choice(rng, self.data.proportional_shares)
+            winner = self._weighted_choice(rng, weights)
             result[winner] += 1
         return result
 
